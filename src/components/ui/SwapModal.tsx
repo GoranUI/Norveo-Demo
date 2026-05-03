@@ -78,13 +78,16 @@ export function SwapModal({ item, inventory, onApply, onClose }: Props) {
   );
 
   useEffect(() => {
-    setModalSearch('');
-    setPriceSort('none');
-    setActiveBrands(new Set());
-    setActiveSuppliers(new Set());
-    setAvailability('all');
-    setPriceRange([priceMin, priceMax]);
-    setAllocations({ [item.partNo]: item.qty });
+    const t = window.setTimeout(() => {
+      setModalSearch('');
+      setPriceSort('none');
+      setActiveBrands(new Set());
+      setActiveSuppliers(new Set());
+      setAvailability('all');
+      setPriceRange([priceMin, priceMax]);
+      setAllocations({ [item.partNo]: item.qty });
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [item.partNo, item.qty, priceMin, priceMax]);
 
   const brands = useMemo(() => {
@@ -102,7 +105,8 @@ export function SwapModal({ item, inventory, onApply, onClose }: Props) {
   const toggleBrand = (b: string) => {
     setActiveBrands((prev) => {
       const next = new Set(prev);
-      next.has(b) ? next.delete(b) : next.add(b);
+      if (next.has(b)) next.delete(b);
+      else next.add(b);
       return next;
     });
   };
@@ -110,7 +114,8 @@ export function SwapModal({ item, inventory, onApply, onClose }: Props) {
   const toggleSupplier = (s: string) => {
     setActiveSuppliers((prev) => {
       const next = new Set(prev);
-      next.has(s) ? next.delete(s) : next.add(s);
+      if (next.has(s)) next.delete(s);
+      else next.add(s);
       return next;
     });
   };

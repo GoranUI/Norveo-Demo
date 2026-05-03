@@ -110,9 +110,17 @@
 
 .progressMeta {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
+  gap: var(--sp-4);
   margin-bottom: var(--sp-3);
+}
+
+.progressLabelRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  min-width: 0;
 }
 
 .progressLabel {
@@ -120,6 +128,19 @@
   font-weight: 700;
   color: var(--text-bright);
   letter-spacing: 0.2px;
+}
+
+.progressCompleteBadge {
+  flex-shrink: 0;
+  font-size: var(--fs-canvas);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--success);
+  background: color-mix(in srgb, var(--success) 12%, transparent);
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, var(--success) 32%, transparent);
 }
 
 .progressFraction {
@@ -526,8 +547,9 @@
   max-width: none;
 }
 
-/* Pane body supplies left gutter; avoid double padding on form roots */
-.stepBlock > div {
+/* Pane body supplies left gutter; avoid double padding on form roots.
+   Exclude the pre-fill badge — it needs symmetric chip padding. */
+.stepBlock > div:not(.prefillBadge) {
   padding-left: 0;
 }
 

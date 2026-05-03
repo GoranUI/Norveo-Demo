@@ -11,7 +11,7 @@ import {
   PanelRightOpen,
 } from 'lucide-react';
 import { useApp } from '../../store';
-import { STEP_GROUPS, STEP_DEFINITIONS } from '../../types';
+import { CONFIGURATOR_STEP_GROUPS, STEP_DEFINITIONS } from '../../types';
 import type { StepGroup, ConfigStep } from '../../types';
 import { WIZARD_STEP_FORMS } from '../StepEditor/StepEditor';
 import { isStepPrefilledFromTemplate } from '../../utils/stepPrefill';
@@ -20,10 +20,6 @@ import { estimateTotalDynamicHeadFt, pipesForDesignFlow } from '../../data/hydra
 import { calculateVolumeTotals } from '../../data/poolSections';
 import { flattenItems } from '../../data/projectItems';
 import styles from './configuratorpage.module.css';
-
-const CONFIG_GROUPS: StepGroup[] = STEP_GROUPS.filter(
-  (g) => g !== 'Review' && g !== 'Project Information',
-);
 
 interface GroupInfo {
   group: StepGroup;
@@ -338,7 +334,7 @@ function ConfiguratorPage() {
   const d = state.data;
 
   const groupData: GroupInfo[] = useMemo(() => {
-    return CONFIG_GROUPS.map((group) => {
+    return CONFIGURATOR_STEP_GROUPS.map((group) => {
       const steps = STEP_DEFINITIONS.filter(
         (s) => s.group === group && s.isVisible(d),
       );
@@ -422,7 +418,12 @@ function ConfiguratorPage() {
         <nav className={styles.groupNav}>
           <div className={styles.progressHeader}>
             <div className={styles.progressMeta}>
-              <span className={styles.progressLabel}>Configuration</span>
+              <span className={styles.progressLabelRow}>
+                <span className={styles.progressLabel}>Configuration</span>
+                {totalCompleted === totalSteps && totalSteps > 0 && (
+                  <span className={styles.progressCompleteBadge}>Complete</span>
+                )}
+              </span>
               <span className={styles.progressFraction}>{totalCompleted}/{totalSteps}</span>
             </div>
             <div className={styles.progressBarTrack}>
@@ -501,7 +502,7 @@ function ConfiguratorPage() {
                         className={`${styles.stepBlock} ${isDone ? styles.stepBlockDone : ''} ${isHighlight ? styles.stepBlockHighlight : ''}`}
                       >
                         {isPrefilled && (
-                          <div className={styles.prefillBadge}>Pre-filled by template</div>
+                          <span className={styles.prefillBadge}>Pre-filled by template</span>
                         )}
                         <Form />
                       </div>

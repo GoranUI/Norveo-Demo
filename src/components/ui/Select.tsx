@@ -41,7 +41,8 @@ export function Select<T extends string>({
   useEffect(() => {
     if (!open) return;
     const idx = options.findIndex((o) => o.value === value);
-    setHighlightIdx(idx >= 0 ? idx : 0);
+    const t = window.setTimeout(() => setHighlightIdx(idx >= 0 ? idx : 0), 0);
+    return () => window.clearTimeout(t);
   }, [open, options, value]);
 
   useEffect(() => {

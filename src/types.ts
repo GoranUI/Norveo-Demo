@@ -586,6 +586,23 @@ export const STEP_GROUPS: StepGroup[] = [
   'Review',
 ];
 
+/** Groups rendered on the Configurator workspace (excludes wizard-only Project Information and Review). */
+export const CONFIGURATOR_STEP_GROUPS: StepGroup[] = STEP_GROUPS.filter(
+  (g) => g !== 'Review' && g !== 'Project Information',
+);
+
+/** True when every visible step in the Configurator groups is complete (same rules as the configurator nav). */
+export function isConfiguratorWorkflowComplete(data: ProjectData): boolean {
+  for (const group of CONFIGURATOR_STEP_GROUPS) {
+    const steps = STEP_DEFINITIONS.filter(
+      (s) => s.group === group && s.isVisible(data),
+    );
+    if (steps.length === 0) continue;
+    if (!steps.every((s) => s.isComplete(data))) return false;
+  }
+  return true;
+}
+
 // ── Tool definitions per authoring mode ──
 export interface ToolDef {
   id: string;

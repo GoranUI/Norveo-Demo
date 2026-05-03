@@ -15,7 +15,9 @@ export function FilesWorkspace() {
   const [browseFolderLabel, setBrowseFolderLabel] = useState('Plan Sets');
 
   useEffect(() => {
-    if (isHistory) setBrowseSearch('');
+    if (!isHistory) return;
+    const t = window.setTimeout(() => setBrowseSearch(''), 0);
+    return () => window.clearTimeout(t);
   }, [isHistory]);
 
   const setView = (view: FilesView) => {
