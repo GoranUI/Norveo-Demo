@@ -501,7 +501,7 @@ function ConfiguratorPage() {
                         className={`${styles.stepBlock} ${isDone ? styles.stepBlockDone : ''} ${isHighlight ? styles.stepBlockHighlight : ''}`}
                       >
                         {isPrefilled && (
-                          <div className={styles.prefillBadge}>Pre-filled from selected source</div>
+                          <div className={styles.prefillBadge}>Pre-filled by template</div>
                         )}
                         <Form />
                       </div>

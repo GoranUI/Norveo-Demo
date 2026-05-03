@@ -8,45 +8,44 @@ import { BackOffice } from './components/BackOffice/BackOffice'
 import { Login } from './components/Login/Login'
 import { readDemoAuthed } from './demoAuth'
 
-/** Map path-style URLs to the hash router (requires SPA rewrite to index.html, e.g. on Vercel). */
-function syncPathnameToHash(): void {
-  const path = window.location.pathname.replace(/\/$/, '') || '/'
-  if (path === '/login') {
-    window.history.replaceState(null, '', '/#/login')
-    return
-  }
-  if (path === '/app' || path.startsWith('/app/')) {
-    const inner = path === '/app' ? '' : path.slice('/app'.length).replace(/^\//, '')
-    const tail = inner.replace(/\/$/, '')
-    const hashPath = tail ? `app/${tail}` : 'app'
-    window.history.replaceState(null, '', `/#/${hashPath}`)
-  }
-}
+/**
+ * Normalize the document URL once before React mounts.
+ * Must not run inside useState (Strict Mode double-invokes initializers in dev).
+ */
+function bootstrapClientUrl(): void {
+  let path = window.location.pathname.replace(/\/$/, '') || '/'
 
-/** Path-style URLs (e.g. /projects) keep pathname in the bar: /projects#/backoffice/projects */
-function getInitialHash(): string {
-  const path = window.location.pathname.replace(/\/$/, '') || '/'
   if (
     path !== '/' &&
     (path.startsWith('/projects') || path.startsWith('/companies'))
   ) {
     const inner = path.slice(1)
-    const url = `${window.location.origin}${path}#/backoffice/${inner}`
-    window.history.replaceState(null, '', url)
+    window.history.replaceState(null, '', `${window.location.origin}${path}#/backoffice/${inner}`)
   }
-  syncPathnameToHash()
-  let hash = window.location.hash
-  /* Production (e.g. Vercel): skip the Portal module hub — start at login, then wizard (#/app). */
-  if (
-    import.meta.env.PROD &&
-    path === '/' &&
-    (hash === '' || hash === '#')
-  ) {
-    const target = readDemoAuthed() ? '#/app' : '#/login'
-    window.history.replaceState(null, '', target)
-    hash = window.location.hash
+
+  path = window.location.pathname.replace(/\/$/, '') || '/'
+  if (path === '/login') {
+    window.history.replaceState(null, '', '/#/login')
+  } else if (path === '/app' || path.startsWith('/app/')) {
+    const inner = path === '/app' ? '' : path.slice('/app'.length).replace(/^\//, '')
+    const tail = inner.replace(/\/$/, '')
+    const hashPath = tail ? `app/${tail}` : 'app'
+    window.history.replaceState(null, '', `/#/${hashPath}`)
   }
-  return hash
+
+  if (!import.meta.env.PROD) return
+
+  path = window.location.pathname.replace(/\/$/, '') || '/'
+  const hash = window.location.hash
+  if (path === '/' && (hash === '' || hash === '#')) {
+    window.history.replaceState(null, '', readDemoAuthed() ? '/#/app' : '/#/login')
+  }
+}
+
+function readRouteHash(): string {
+  const h = window.location.hash
+  if (h && h !== '#') return h
+  return '#/'
 }
 
 function isProtectedRoute(route: string): boolean {
@@ -58,7 +57,7 @@ function isAuthed(): boolean {
 }
 
 export function Root() {
-  const [route, setRoute] = useState(getInitialHash)
+  const [route, setRoute] = useState(readRouteHash)
 
   useEffect(() => {
     const onHash = () => setRoute(window.location.hash);
@@ -102,6 +101,8 @@ export function Root() {
 
   return <Portal />;
 }
+
+bootstrapClientUrl()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

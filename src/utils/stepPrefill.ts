@@ -38,6 +38,7 @@ export function isStepPrefilledFromTemplate(
   preset: Partial<ProjectData> | null,
 ): boolean {
   if (!preset) return false;
+  if (Object.keys(preset).length === 0) return false;
   const keys = STEP_TO_KEYS[stepId];
   if (!keys?.length) return false;
   return keys.some((k) => presetKeyHasValue(preset, k));

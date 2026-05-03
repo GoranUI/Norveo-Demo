@@ -1,4 +1,6 @@
 import { createContext, useContext } from 'react';
+import { getOptionCost } from './data/configCosts';
+import { FILTER_CATALOG } from './data/equipmentCatalog';
 import { DEFAULT_PROJECT_ITEMS, cloneProjectItems } from './data/projectItems';
 import { SEED_FILES, SEED_ACTIVITY } from './data/projectHistory';
 import type { ProjectFile, ActivityEvent } from './data/projectHistory';
@@ -24,6 +26,39 @@ function setAllVisibility(items: ProjectItem[], visible: boolean): ProjectItem[]
     visible,
     ...(item.children?.length ? { children: setAllVisibility(item.children, visible) } : {}),
   }));
+}
+
+/** Keeps the mechanical "filter" BOM line aligned with configurator filtration choices so cost summaries update live. */
+function syncFilterBomLine(items: ProjectItem[], data: ProjectData): ProjectItem[] {
+  const ft = data.filtrationType;
+  if (!ft) return items;
+
+  const selectedId = data.selectedFilterModelId;
+  if (selectedId) {
+    const product = FILTER_CATALOG.find((f) => f.id === selectedId);
+    if (product && product.mediaType === ft) {
+      return updateItemInTree(items, 'filter', {
+        price: product.price,
+        partNo: product.partNo,
+        brand: product.brand,
+        description: `${product.model} — ${product.mediaType}`,
+        name: 'Filter System',
+      });
+    }
+  }
+
+  const opt = getOptionCost('filtrationType', ft);
+  const price = opt?.cost ?? 1200;
+  const desc = opt?.note
+    ? `${opt.note} — pick a tank model to refine pricing`
+    : 'Filter system — pick a tank model to refine pricing';
+
+  return updateItemInTree(items, 'filter', {
+    price,
+    description: desc,
+    partNo: '—',
+    brand: '—',
+  });
 }
 
 type LegacyPreset = Partial<Omit<ProjectData, 'gutterStyle'>> & {
@@ -380,7 +415,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return {
         ...state,
         wizardPhase: 'chat',
-        appliedTemplatePreset: {},
+        appliedTemplatePreset: null,
         data: createBlankProjectData(),
         isDirty: false,
       };
@@ -437,13 +472,19 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         : [...state.expandedGroups, action.group];
       return { ...state, expandedGroups: groups };
     }
-    case 'UPDATE_DATA':
+    case 'UPDATE_DATA': {
       if (state.data.isFinalized) return state;
+      const nextData = { ...state.data, ...action.payload };
+      const shouldSyncFilter =
+        'filtrationType' in action.payload || 'selectedFilterModelId' in action.payload;
+      const nextItems = shouldSyncFilter ? syncFilterBomLine(state.projectItems, nextData) : state.projectItems;
       return {
         ...state,
-        data: { ...state.data, ...action.payload },
+        data: nextData,
+        projectItems: nextItems,
         isDirty: true,
       };
+    }
     case 'TOGGLE_FINALIZE':
       return { ...state, data: { ...state.data, isFinalized: !state.data.isFinalized } };
     case 'SET_AUTHORING_MODE':
