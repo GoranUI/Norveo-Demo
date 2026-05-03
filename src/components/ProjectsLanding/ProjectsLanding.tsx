@@ -104,6 +104,9 @@ function ProjectCard({ project, onOpen }: { project: MockProject; onOpen: () => 
           <span className={styles.progressFraction}>
             {project.configDone}/{project.configTotal}
             <span className={styles.progressPct}>· {pct}%</span>
+            {pct >= 100 && project.configTotal > 0 && (
+              <span className={styles.configCompleteMark}>· Complete</span>
+            )}
           </span>
         </div>
         <div className={styles.progressBar} role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}>

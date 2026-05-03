@@ -3,7 +3,7 @@ import {
   Sun, Moon, SlidersHorizontal, PenTool, ClipboardList, Folder, Wrench,
 } from 'lucide-react';
 import { useApp } from '../../store';
-import { WORKSPACE_LABELS } from '../../types';
+import { WORKSPACE_LABELS, isConfiguratorWorkflowComplete } from '../../types';
 import type { Workspace } from '../../types';
 import { BrandMark } from './NarveoLogo';
 import { VersionsPopover } from './VersionsPopover';
@@ -55,6 +55,11 @@ export function TitleBar() {
             <ChevronRight size={11} className={styles.sep} aria-hidden="true" />
             <span className={styles.projectName}>{data.projectName || 'Untitled Project'}</span>
             {data.isFinalized && <span className={styles.badge}>FINALIZED</span>}
+            {!data.isFinalized && isConfiguratorWorkflowComplete(data) && (
+              <span className={styles.badgeComplete} title="All configurator steps are done">
+                CONFIG COMPLETE
+              </span>
+            )}
           </>
         ) : wizardPhase === 'landing' ? (
           <span className={styles.breadcrumbCurrent}>Projects</span>

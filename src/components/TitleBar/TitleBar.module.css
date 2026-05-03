@@ -76,6 +76,17 @@
   letter-spacing: 0.5px;
 }
 
+.badgeComplete {
+  font-size: var(--fs-canvas);
+  background: color-mix(in srgb, var(--success) 18%, transparent);
+  color: var(--success);
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  letter-spacing: 0.35px;
+  white-space: nowrap;
+}
+
 /* Center: workspace navigation tabs */
 .center {
   position: absolute;

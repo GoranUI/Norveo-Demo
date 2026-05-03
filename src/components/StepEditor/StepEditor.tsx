@@ -24,6 +24,7 @@ import { FinalReviewForm } from '../StepForms/FinalReviewForm';
 import styles from './StepEditor.module.css';
 
 /** Shared with full-screen config wizard — same forms as the workspace ConfigDrawer. */
+// eslint-disable-next-line react-refresh/only-export-components -- map is imported by ConfiguratorPage / drawer; splitting only for HMR is low value.
 export const WIZARD_STEP_FORMS: Record<ConfigStep, React.FC> = {
   [ConfigStep.ProjectLocation]: ProjectLocationForm,
   [ConfigStep.Customer]: CustomerForm,

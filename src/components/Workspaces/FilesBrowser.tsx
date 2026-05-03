@@ -83,11 +83,13 @@ export function FilesBrowser({
     handoffRef.current = id;
     if (!id) return;
     const file = projectFiles.find((f) => f.id === id);
-    if (file) {
+    if (!file) return;
+    const t = window.setTimeout(() => {
       setActiveFolderId(file.folderId);
       setSelectedFileId(file.id);
       onSearchChange('');
-    }
+    }, 0);
+    return () => window.clearTimeout(t);
   }, [state.selectedFileId, projectFiles, onSearchChange]);
 
   useEffect(() => {

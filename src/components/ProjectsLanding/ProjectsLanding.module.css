@@ -531,6 +531,12 @@
   font-weight: 400;
 }
 
+.configCompleteMark {
+  color: var(--success);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
 .progressBar {
   height: 4px;
   background: var(--bg-input);

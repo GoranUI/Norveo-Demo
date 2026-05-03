@@ -88,6 +88,7 @@ export function ChatPanel() {
   const [isTyping, setIsTyping] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const messageIdRef = useRef(0);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -95,15 +96,19 @@ export function ChatPanel() {
 
   const send = (text: string) => {
     if (!text.trim()) return;
-    const userMsg: Message = { id: Date.now(), role: 'user', text: text.trim(), timestamp: new Date() };
+    messageIdRef.current += 1;
+    const userId = messageIdRef.current;
+    const userMsg: Message = { id: userId, role: 'user', text: text.trim(), timestamp: new Date() };
     setMessages((prev) => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
 
+    const replyDelayMs = 800 + (userId % 7) * 85;
     setTimeout(() => {
       const response = findResponse(text);
+      messageIdRef.current += 1;
       const aiMsg: Message = {
-        id: Date.now() + 1,
+        id: messageIdRef.current,
         role: 'assistant',
         text: response.text,
         options: response.options,
@@ -111,7 +116,7 @@ export function ChatPanel() {
       };
       setMessages((prev) => [...prev, aiMsg]);
       setIsTyping(false);
-    }, 800 + Math.random() * 600);
+    }, replyDelayMs);
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
