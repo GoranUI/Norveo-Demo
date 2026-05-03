@@ -1,0 +1,192 @@
+.panel {
+  width: 220px;
+  min-width: 220px;
+  background: var(--bg-panel);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.header {
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  border-bottom: 1px solid var(--border-light);
+  min-height: var(--control-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.headerBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s;
+}
+
+.headerBtn:hover {
+  color: var(--text-primary);
+}
+
+.searchBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.1s;
+}
+
+.searchBtn:hover {
+  color: var(--text-primary);
+}
+
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-1) 0;
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 2px var(--sp-3);
+  cursor: default;
+  min-height: 22px;
+  font-size: var(--fs-xs);
+  transition: background 0.1s;
+  outline: none;
+}
+
+.row:hover {
+  background: var(--bg-hover);
+}
+
+.rowHidden .name,
+.rowHidden .dot {
+  opacity: 0.35;
+}
+
+/* Leaf with alternatives — clickable */
+.rowSwappable {
+  cursor: pointer;
+}
+
+.rowSwappable:hover {
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
+}
+
+.rowSwappable:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: -2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Leaf without alternatives — non-interactive */
+.rowInert .name {
+  opacity: 0.6;
+}
+
+/* ── Eye toggle ── */
+.eyeBtn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-shrink: 0;
+  width: 12px;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.1s, color 0.1s;
+}
+
+.row:hover .eyeBtn,
+.rowHidden .eyeBtn {
+  opacity: 1;
+}
+
+.eyeBtn:hover {
+  color: var(--text-primary);
+}
+
+.chevron {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  flex-shrink: 0;
+  width: 12px;
+  justify-content: center;
+}
+
+.chevronSpace {
+  width: 12px;
+  flex-shrink: 0;
+}
+
+.dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.name {
+  flex: 1;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+
+.cost {
+  color: var(--success);
+  font-size: var(--fs-canvas);
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.qty {
+  color: var(--text-muted);
+  font-size: var(--fs-canvas);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.unit {
+  color: var(--text-muted);
+  opacity: 0.7;
+  font-size: var(--fs-canvas);
+}
