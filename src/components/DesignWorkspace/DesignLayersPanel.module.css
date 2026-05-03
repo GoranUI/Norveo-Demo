@@ -1,12 +1,51 @@
+.shell {
+  position: relative;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  height: 100%;
+  align-self: stretch;
+}
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 6px;
+  height: 100%;
+  z-index: 2;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.resizeHandle::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 2px;
+  bottom: 0;
+  width: 1px;
+  background: var(--border);
+  opacity: 0.85;
+  pointer-events: none;
+}
+
+.resizeHandle:hover::after {
+  background: var(--accent);
+  opacity: 0.6;
+}
+
 .panel {
-  width: 220px;
-  min-width: 220px;
+  flex: 1;
+  min-height: 0;
+  min-width: 0;
+  width: 100%;
   background: var(--bg-panel);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  flex-shrink: 0;
 }
 
 .header {

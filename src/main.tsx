@@ -7,6 +7,14 @@ import { Portal } from './Portal'
 import { BackOffice } from './components/BackOffice/BackOffice'
 import { Login } from './components/Login/Login'
 
+function readNorveoAuthed(): boolean {
+  try {
+    return localStorage.getItem('norveo-auth') === '1'
+  } catch {
+    return false
+  }
+}
+
 /** Path-style URLs (e.g. /projects) keep pathname in the bar: /projects#/backoffice/projects */
 function getInitialHash(): string {
   const path = window.location.pathname.replace(/\/$/, '') || '/'
@@ -18,7 +26,18 @@ function getInitialHash(): string {
     const url = `${window.location.origin}${path}#/backoffice/${inner}`
     window.history.replaceState(null, '', url)
   }
-  return window.location.hash
+  let hash = window.location.hash
+  /* Production (e.g. Vercel): skip the Portal module hub — start at login, then wizard (#/app). */
+  if (
+    import.meta.env.PROD &&
+    path === '/' &&
+    (hash === '' || hash === '#')
+  ) {
+    const target = readNorveoAuthed() ? '#/app' : '#/login'
+    window.history.replaceState(null, '', target)
+    hash = window.location.hash
+  }
+  return hash
 }
 
 function isProtectedRoute(route: string): boolean {
@@ -26,11 +45,7 @@ function isProtectedRoute(route: string): boolean {
 }
 
 function isAuthed(): boolean {
-  try {
-    return localStorage.getItem('norveo-auth') === '1'
-  } catch {
-    return false
-  }
+  return readNorveoAuthed()
 }
 
 export function Root() {

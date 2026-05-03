@@ -99,7 +99,11 @@ export function NestedOptionButton({
   const handleVariantClick = (group: NestedGroup, variantValue: string) => {
     if (disabled) return;
     if (!isMulti) {
-      onChangeSingle(variantValue);
+      if (singleValue === variantValue) {
+        onChangeSingle(null);
+      } else {
+        onChangeSingle(variantValue);
+      }
       setFamilyOverride(null);
       return;
     }

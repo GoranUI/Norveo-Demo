@@ -14,7 +14,7 @@ interface LinkItem {
 
 const docs: LinkItem[] = [
   {
-    label: 'UX Audit (Norveo)',
+    label: 'UX Audit (The Deep End)',
     href: '/docs/ux-audit.html',
     description:
       'Design-led UX audit: usability, visual design, accessibility, SEO — with findings, screenshots, and recommendations.',
@@ -36,7 +36,7 @@ const docs: LinkItem[] = [
   },
 ];
 
-const norveoDemo: LinkItem[] = [
+const appDemo: LinkItem[] = [
   {
     label: 'Start UAT Demo',
     href: '#/login',
@@ -153,7 +153,7 @@ export function Portal() {
       <header className={styles.header}>
         <div className={styles.logo}>
           <Box size={28} strokeWidth={1.5} />
-          <span>Norveo</span>
+          <span>The Deep End</span>
         </div>
         <p className={styles.tagline}>Product Navigation Hub</p>
       </header>
@@ -169,15 +169,15 @@ export function Portal() {
 
         <Section
           icon={<Waves size={18} />}
-          title="Norveo — Pool Configurator"
+          title="The Deep End — Pool Configurator"
           subtitle="AI-powered pool design, engineering, and quoting"
           accent="#0e7490"
-          items={norveoDemo}
+          items={appDemo}
         />
       </main>
 
       <footer className={styles.footer}>
-        <span>&copy; {new Date().getFullYear()} Norveo</span>
+        <span>&copy; {new Date().getFullYear()} The Deep End</span>
       </footer>
     </div>
   );

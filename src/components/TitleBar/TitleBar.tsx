@@ -5,7 +5,7 @@ import {
 import { useApp } from '../../store';
 import { WORKSPACE_LABELS } from '../../types';
 import type { Workspace } from '../../types';
-import { NorveoLogo } from './NarveoLogo';
+import { BrandMark } from './NarveoLogo';
 import { VersionsPopover } from './VersionsPopover';
 import styles from './TitleBar.module.css';
 
@@ -36,7 +36,7 @@ export function TitleBar() {
   return (
     <div className={styles.bar}>
       <div className={styles.left}>
-        <NorveoLogo size={16} />
+        <BrandMark size={16} />
         {wizardPhase === 'workspace' ? (
           <>
             <a

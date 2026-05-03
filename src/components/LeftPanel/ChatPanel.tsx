@@ -13,7 +13,7 @@ interface Message {
 const WELCOME: Message = {
   id: 0,
   role: 'assistant',
-  text: "Hi! I'm Norveo AI. I can help with equipment sizing, code requirements, material selection, and project decisions. Ask me anything about your pool design.",
+  text: "Hi! I'm The Deep End's assistant. I can help with equipment sizing, code requirements, material selection, and project decisions. Ask me anything about your pool design.",
   timestamp: new Date(),
 };
 
@@ -130,7 +130,7 @@ export function ChatPanel() {
               {msg.role === 'assistant' ? <Sparkles size={13} /> : <User size={13} />}
             </div>
             <div className={styles.msgBody}>
-              <div className={styles.msgRole}>{msg.role === 'assistant' ? 'Norveo AI' : 'You'}</div>
+              <div className={styles.msgRole}>{msg.role === 'assistant' ? 'Deep End AI' : 'You'}</div>
               <div className={styles.msgText}>{msg.text}</div>
               {msg.role === 'assistant' && msg.options && msg.options.length > 0 && (
                 <div className={styles.options}>
@@ -153,7 +153,7 @@ export function ChatPanel() {
           <div className={`${styles.msg} ${styles.msgAi}`}>
             <div className={styles.msgIcon}><Sparkles size={13} /></div>
             <div className={styles.msgBody}>
-              <div className={styles.msgRole}>Norveo AI</div>
+              <div className={styles.msgRole}>Deep End AI</div>
               <div className={styles.typing}>
                 <span /><span /><span />
               </div>

@@ -77,7 +77,7 @@ export function MenuBar() {
       { label: 'Keyboard Shortcuts', shortcut: '\u2318/' },
       { label: 'Documentation' },
       { label: 'divider', divider: true },
-      { label: 'About Norveo' },
+      { label: 'About The Deep End' },
     ],
   };
 

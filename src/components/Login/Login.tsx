@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { ArrowRight, Lock, Mail } from 'lucide-react';
-import { NorveoLogo } from '../TitleBar/NarveoLogo';
+import { ArrowRight, CheckCircle2, ClipboardList, Lock, Mail, ShieldCheck, Sparkles, Waves } from 'lucide-react';
+import { BrandMark } from '../TitleBar/NarveoLogo';
 import styles from './Login.module.css';
 
 function getStoredTheme(): 'light' | 'dark' {
@@ -14,7 +14,7 @@ function getStoredTheme(): 'light' | 'dark' {
 }
 
 export function Login() {
-  const [email, setEmail] = useState('demo@norveo.com');
+  const [email, setEmail] = useState('demo@thedeepend.app');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -38,68 +38,99 @@ export function Login() {
 
   return (
     <main className={styles.page}>
-      <section className={styles.panel} aria-labelledby="login-title">
-        <div className={styles.brand}>
-          <NorveoLogo size={22} />
-          <span className={styles.demoBadge}>UAT demo</span>
+      <section className={styles.shell} aria-labelledby="login-title">
+        <div className={styles.hero}>
+          <div className={styles.brand}>
+            <BrandMark size={24} />
+            <span className={styles.demoBadge}>UAT demo</span>
+          </div>
+
+          <div className={styles.copy}>
+            <p className={styles.eyebrow}>
+              <Sparkles size={13} aria-hidden="true" />
+              AI pool workspace
+            </p>
+            <h1 id="login-title" className={styles.title}>
+              Configure, engineer, and procure from one project workspace.
+            </h1>
+            <p className={styles.subtitle}>
+              Sign in to continue The Deep End demo path: project intake, AI-assisted configuration,
+              engineering review, procurement, and purchase order tracking.
+            </p>
+          </div>
+
+          <div className={styles.featureGrid} aria-label="Demo highlights">
+            <div className={styles.featureCard}>
+              <Waves size={16} aria-hidden="true" />
+              <span>Pool configurator</span>
+            </div>
+            <div className={styles.featureCard}>
+              <ClipboardList size={16} aria-hidden="true" />
+              <span>Procurement queue</span>
+            </div>
+            <div className={styles.featureCard}>
+              <ShieldCheck size={16} aria-hidden="true" />
+              <span>UAT safe mode</span>
+            </div>
+          </div>
         </div>
 
-        <div className={styles.copy}>
-          <p className={styles.eyebrow}>Pool configurator</p>
-          <h1 id="login-title" className={styles.title}>Sign in to Norveo</h1>
-          <p className={styles.subtitle}>
-            Continue to the project setup, configurator, procurement, and purchase order demo.
-          </p>
-        </div>
+        <div className={styles.panel}>
+          <div className={styles.panelHeader}>
+            <p className={styles.panelKicker}>Welcome back</p>
+            <h2 className={styles.panelTitle}>Sign in to The Deep End</h2>
+            <p className={styles.panelSubtitle}>Use the demo email and any password to enter the workspace.</p>
+          </div>
 
-        <form className={styles.form} onSubmit={handleSubmit}>
-          <label className={styles.field}>
-            <span>Email</span>
-            <div className={styles.inputWrap}>
-              <Mail size={14} aria-hidden="true" />
-              <input
-                type="email"
-                value={email}
-                onChange={(event) => {
-                  setEmail(event.target.value);
-                  setError('');
-                }}
-                placeholder="demo@norveo.com"
-                autoComplete="email"
-              />
+          <form className={styles.form} onSubmit={handleSubmit}>
+            <div className={styles.field}>
+              <label htmlFor="login-email">Email</label>
+              <div className={styles.inputWrap}>
+                <Mail size={14} aria-hidden="true" />
+                <input
+                  id="login-email"
+                  type="email"
+                  value={email}
+                  onChange={(event) => {
+                    setEmail(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="demo@thedeepend.app"
+                  autoComplete="email"
+                />
+              </div>
             </div>
-          </label>
 
-          <label className={styles.field}>
-            <span>Password</span>
-            <div className={styles.inputWrap}>
-              <Lock size={14} aria-hidden="true" />
-              <input
-                type="password"
-                value={password}
-                onChange={(event) => {
-                  setPassword(event.target.value);
-                  setError('');
-                }}
-                placeholder="Any password"
-                autoComplete="current-password"
-              />
+            <div className={styles.field}>
+              <label htmlFor="login-password">Password</label>
+              <div className={styles.inputWrap}>
+                <Lock size={14} aria-hidden="true" />
+                <input
+                  id="login-password"
+                  type="password"
+                  value={password}
+                  onChange={(event) => {
+                    setPassword(event.target.value);
+                    setError('');
+                  }}
+                  placeholder="Any password"
+                  autoComplete="current-password"
+                />
+              </div>
             </div>
-          </label>
 
-          {error && <p className={styles.error}>{error}</p>}
+            {error && <p className={styles.error}>{error}</p>}
 
-          <button type="submit" className={styles.submit}>
-            Sign in
-            <ArrowRight size={14} aria-hidden="true" />
-          </button>
-        </form>
+            <button type="submit" className={styles.submit}>
+              Enter demo workspace
+              <ArrowRight size={15} aria-hidden="true" />
+            </button>
+          </form>
 
-        <div className={styles.footer}>
-          <button type="button" className={styles.linkButton}>
-            Forgot password?
-          </button>
-          <span>Mock credentials accepted for UAT.</span>
+          <div className={styles.demoNote}>
+            <CheckCircle2 size={14} aria-hidden="true" />
+            <span>Mock authentication only. No real credentials are required for UAT.</span>
+          </div>
         </div>
       </section>
     </main>

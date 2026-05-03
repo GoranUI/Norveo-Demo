@@ -526,15 +526,6 @@ export function BOMWorkspace() {
                               </option>
                             ))}
                           </select>
-                          {(item.status === 'not-required' || item.status === 'purchased') && (
-                            <button
-                              type="button"
-                              className={styles.pendingBtn}
-                              onClick={() => setItemStatus(item.id, 'to-purchase')}
-                            >
-                              Add to Pending
-                            </button>
-                          )}
                         </div>
                       </td>
                     </tr>

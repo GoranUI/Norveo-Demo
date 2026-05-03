@@ -11,7 +11,7 @@ import {
   Grid3x3, Magnet, ZoomIn, ZoomOut, GripVertical,
   FileText, Calculator, Package, Clock,
 } from 'lucide-react';
-import { NorveoLogo } from './components/TitleBar/NarveoLogo';
+import { BrandMark } from './components/TitleBar/NarveoLogo';
 
 export function UILibrary() {
   const [textVal, setTextVal] = useState('123 Main Street');
@@ -24,7 +24,7 @@ export function UILibrary() {
       <div style={{ maxWidth: 1200, margin: '0 auto' }}>
 
         <h1 style={{ fontSize: '24px', fontWeight: 700, color: '#f0f0f0', marginBottom: 8 }}>
-          Norveo UI Library
+          The Deep End UI Library
         </h1>
         <p style={{ color: '#666', fontSize: '13px', marginBottom: 40 }}>
           All unique design components. Access at <code style={{ color: '#4a9eff' }}>#/ui-library</code>
@@ -33,11 +33,11 @@ export function UILibrary() {
         {/* ── BRANDING ── */}
         <Section title="Branding">
           <Row>
-            <Cell label="Logo (dark bg)">
-              <NorveoLogo size={20} />
+            <Cell label="Mark (dark bg)">
+              <BrandMark size={20} />
             </Cell>
-            <Cell label="Logo (small)">
-              <NorveoLogo size={14} />
+            <Cell label="Mark (small)">
+              <BrandMark size={14} />
             </Cell>
             <Cell label="Accent Color">
               <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>

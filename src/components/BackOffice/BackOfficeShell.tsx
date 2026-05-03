@@ -29,7 +29,7 @@ export function BackOfficeShell({
           <div className={styles.logoIcon} aria-hidden>
             N
           </div>
-          <span className={styles.logoText}>Norveo</span>
+          <span className={styles.logoText}>The Deep End</span>
         </div>
 
         <div className={styles.sidebarPanel}>
@@ -92,7 +92,7 @@ export function BackOfficeShell({
             </button>
             <button type="button" className={styles.profileBtn} title="Profile">
               <div className={styles.profileAvatarFallback}>NA</div>
-              <span className={styles.profileName}>Norveo Admin</span>
+              <span className={styles.profileName}>The Deep End Admin</span>
             </button>
           </div>
         </header>

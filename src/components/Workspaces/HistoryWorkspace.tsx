@@ -52,7 +52,7 @@ function shareLinkForFile(file: ProjectFile): string {
 
 function downloadPlaceholder(file: ProjectFile): void {
   const lines = [
-    'Norveo — demo download',
+    'The Deep End — demo download',
     `File: ${file.filename}`,
     `Version: ${file.version}`,
     `Size: ${formatBytes(file.sizeBytes)}`,
@@ -64,7 +64,7 @@ function downloadPlaceholder(file: ProjectFile): void {
   const a = document.createElement('a');
   const base = file.filename.replace(/\.[^/.]+$/, '') || 'file';
   a.href = url;
-  a.download = `${base}-norveo-placeholder.txt`;
+  a.download = `${base}-deep-end-placeholder.txt`;
   a.rel = 'noopener';
   document.body.appendChild(a);
   a.click();

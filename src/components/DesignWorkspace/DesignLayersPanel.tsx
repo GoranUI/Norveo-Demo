@@ -1,4 +1,4 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { ChevronRight, ChevronDown, Search, Eye, EyeOff, EyeIcon, EyeOffIcon } from 'lucide-react';
 import { useApp } from '../../store';
 import { subtotal } from '../../data/projectItems';
@@ -9,6 +9,23 @@ import { SwapModal } from '../ui/SwapModal';
 import type { SwapAllocation } from '../ui/SwapModal';
 import type { ProjectItem } from '../../types';
 import styles from './DesignLayersPanel.module.css';
+
+const OBJECTS_PANEL_WIDTH_KEY = 'norveo-design-objects-panel-width';
+const DEFAULT_PANEL_WIDTH = 220;
+const MIN_PANEL_WIDTH = 160;
+const MAX_PANEL_WIDTH = 560;
+
+function readStoredPanelWidth(): number {
+  try {
+    const raw = localStorage.getItem(OBJECTS_PANEL_WIDTH_KEY);
+    if (!raw) return DEFAULT_PANEL_WIDTH;
+    const n = Number.parseInt(raw, 10);
+    if (!Number.isFinite(n)) return DEFAULT_PANEL_WIDTH;
+    return Math.min(MAX_PANEL_WIDTH, Math.max(MIN_PANEL_WIDTH, n));
+  } catch {
+    return DEFAULT_PANEL_WIDTH;
+  }
+}
 
 function formatQty(node: ProjectItem): string | null {
   if (!node.qty || !node.unit) return null;
@@ -136,6 +153,43 @@ export function DesignLayersPanel() {
   const { state, dispatch } = useApp();
   const [swapItem, setSwapItem] = useState<ProjectItem | null>(null);
   const invokerRef = useRef<HTMLElement | null>(null);
+  const [panelWidth, setPanelWidth] = useState(readStoredPanelWidth);
+  const panelWidthRef = useRef(panelWidth);
+  useEffect(() => {
+    panelWidthRef.current = panelWidth;
+  }, [panelWidth]);
+
+  const startResize = useCallback((event: React.PointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    const startX = event.clientX;
+    const startW = panelWidthRef.current;
+    const maxW = Math.min(MAX_PANEL_WIDTH, Math.round(window.innerWidth * 0.5));
+
+    const onMove = (ev: PointerEvent) => {
+      const next = Math.min(maxW, Math.max(MIN_PANEL_WIDTH, startW + (ev.clientX - startX)));
+      panelWidthRef.current = next;
+      setPanelWidth(next);
+    };
+
+    const onEnd = () => {
+      document.removeEventListener('pointermove', onMove);
+      document.removeEventListener('pointerup', onEnd);
+      document.removeEventListener('pointercancel', onEnd);
+      document.body.style.removeProperty('cursor');
+      document.body.style.removeProperty('user-select');
+      try {
+        localStorage.setItem(OBJECTS_PANEL_WIDTH_KEY, String(panelWidthRef.current));
+      } catch {
+        /* ignore */
+      }
+    };
+
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+    document.addEventListener('pointermove', onMove);
+    document.addEventListener('pointerup', onEnd);
+    document.addEventListener('pointercancel', onEnd);
+  }, []);
 
   const allVisible = state.projectItems.every((n) => n.visible);
 
@@ -176,37 +230,47 @@ export function DesignLayersPanel() {
   }, []);
 
   return (
-    <div className={styles.panel}>
-      <div className={styles.header}>
-        <span>Objects</span>
-        <div className={styles.headerActions}>
-          <button
-            type="button"
-            className={styles.headerBtn}
-            onClick={toggleAll}
-            title={allVisible ? 'Hide all layers' : 'Show all layers'}
-          >
-            {allVisible ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
-          </button>
-          <button type="button" className={styles.searchBtn} title="Search objects">
-            <Search size={12} />
-          </button>
+    <div className={styles.shell} style={{ width: panelWidth, minWidth: panelWidth }}>
+      <div
+        className={styles.resizeHandle}
+        onPointerDown={startResize}
+        role="separator"
+        aria-orientation="vertical"
+        aria-label="Resize objects panel"
+        title="Drag to resize"
+      />
+      <div className={styles.panel}>
+        <div className={styles.header}>
+          <span>Objects</span>
+          <div className={styles.headerActions}>
+            <button
+              type="button"
+              className={styles.headerBtn}
+              onClick={toggleAll}
+              title={allVisible ? 'Hide all layers' : 'Show all layers'}
+            >
+              {allVisible ? <EyeOffIcon size={12} /> : <EyeIcon size={12} />}
+            </button>
+            <button type="button" className={styles.searchBtn} title="Search objects">
+              <Search size={12} />
+            </button>
+          </div>
         </div>
-      </div>
-      <div className={styles.list}>
-        {state.projectItems.map((node) => (
-          <LayerNode key={node.id} node={node} onSwapRequest={handleSwapRequest} />
-        ))}
-      </div>
+        <div className={styles.list}>
+          {state.projectItems.map((node) => (
+            <LayerNode key={node.id} node={node} onSwapRequest={handleSwapRequest} />
+          ))}
+        </div>
 
-      {swapItem && modalInventory.length > 1 && (
-        <SwapModal
-          item={itemToLineRef(swapItem)}
-          inventory={modalInventory}
-          onApply={handleApply}
-          onClose={handleClose}
-        />
-      )}
+        {swapItem && modalInventory.length > 1 && (
+          <SwapModal
+            item={itemToLineRef(swapItem)}
+            inventory={modalInventory}
+            onApply={handleApply}
+            onClose={handleClose}
+          />
+        )}
+      </div>
     </div>
   );
 }

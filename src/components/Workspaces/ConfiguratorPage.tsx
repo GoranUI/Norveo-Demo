@@ -325,10 +325,10 @@ function ProjectInfoBanner() {
           </div>
         )}
       </div>
-      <a className={styles.bannerAction} href="#/backoffice/projects/1" title="Edit in Project Admin">
-        <ExternalLink size={12} />
+      <span className={styles.bannerAction}>
+        <ExternalLink size={12} aria-hidden />
         <span>Edit in Admin</span>
-      </a>
+      </span>
     </div>
   );
 }

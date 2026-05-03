@@ -181,7 +181,7 @@ function SourcePicker() {
             <Sparkles size={24} className={styles.cardIcon} strokeWidth={1.5} />
             <div className={styles.cardChatContent}>
               <span className={styles.cardName}>Chat with AI</span>
-              <span className={styles.cardDesc}>Answer questions conversationally and let Norveo configure your project from scratch</span>
+              <span className={styles.cardDesc}>Answer questions conversationally and let The Deep End configure your project from scratch</span>
             </div>
           </button>
         </SourceSection>
