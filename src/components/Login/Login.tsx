@@ -1,6 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { ArrowRight, CheckCircle2, ClipboardList, Lock, Mail, ShieldCheck, Sparkles, Waves } from 'lucide-react';
 import { BrandMark } from '../TitleBar/NarveoLogo';
+import { setDemoAuthed } from '../../demoAuth';
 import styles from './Login.module.css';
 
 function getStoredTheme(): 'light' | 'dark' {
@@ -28,11 +29,7 @@ export function Login() {
       setError('Enter any email and password to continue the demo.');
       return;
     }
-    try {
-      localStorage.setItem('norveo-auth', '1');
-    } catch {
-      /* ignore */
-    }
+    setDemoAuthed();
     window.location.hash = '#/app';
   };
 

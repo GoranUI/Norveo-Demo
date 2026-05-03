@@ -6,12 +6,20 @@ import { UILibrary } from './UILibrary'
 import { Portal } from './Portal'
 import { BackOffice } from './components/BackOffice/BackOffice'
 import { Login } from './components/Login/Login'
+import { readDemoAuthed } from './demoAuth'
 
-function readNorveoAuthed(): boolean {
-  try {
-    return localStorage.getItem('norveo-auth') === '1'
-  } catch {
-    return false
+/** Map path-style URLs to the hash router (requires SPA rewrite to index.html, e.g. on Vercel). */
+function syncPathnameToHash(): void {
+  const path = window.location.pathname.replace(/\/$/, '') || '/'
+  if (path === '/login') {
+    window.history.replaceState(null, '', '/#/login')
+    return
+  }
+  if (path === '/app' || path.startsWith('/app/')) {
+    const inner = path === '/app' ? '' : path.slice('/app'.length).replace(/^\//, '')
+    const tail = inner.replace(/\/$/, '')
+    const hashPath = tail ? `app/${tail}` : 'app'
+    window.history.replaceState(null, '', `/#/${hashPath}`)
   }
 }
 
@@ -26,6 +34,7 @@ function getInitialHash(): string {
     const url = `${window.location.origin}${path}#/backoffice/${inner}`
     window.history.replaceState(null, '', url)
   }
+  syncPathnameToHash()
   let hash = window.location.hash
   /* Production (e.g. Vercel): skip the Portal module hub — start at login, then wizard (#/app). */
   if (
@@ -33,7 +42,7 @@ function getInitialHash(): string {
     path === '/' &&
     (hash === '' || hash === '#')
   ) {
-    const target = readNorveoAuthed() ? '#/app' : '#/login'
+    const target = readDemoAuthed() ? '#/app' : '#/login'
     window.history.replaceState(null, '', target)
     hash = window.location.hash
   }
@@ -45,7 +54,7 @@ function isProtectedRoute(route: string): boolean {
 }
 
 function isAuthed(): boolean {
-  return readNorveoAuthed()
+  return readDemoAuthed()
 }
 
 export function Root() {
