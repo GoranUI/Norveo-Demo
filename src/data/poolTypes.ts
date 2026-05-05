@@ -162,10 +162,26 @@ export function getPoolType(id: string | null): PoolType | undefined {
   return POOL_TYPES.find((p) => p.id === id);
 }
 
+/** Short explanatory copy for the pool-type picker (popover). */
+export function getPoolTypeHelpBlurb(p: PoolType): string {
+  const classLine =
+    p.ispscClass !== '—' && p.ispscClass !== 'Other'
+      ? `International Swimming Pool and Spa Code (${p.ispscClass}). `
+      : '';
+  const desc = p.description ? `${p.description} ` : '';
+  const turn =
+    p.turnoverHours === 'depth-based'
+      ? 'This class uses the depth-based turnover rule in this tool: min(1.5 × average depth in hours, 6 h). '
+      : `Typical turnover target used for hydraulic sizing: ${p.turnoverHours} hour(s) per pool volume.`;
+  return `${classLine}${desc}${turn}`.trim();
+}
+
 /** Group pool types by ISPSC class for the picker. */
 export interface PoolTypeGroup {
   family: string;
   label: string;
+  /** Shown next to the family chip (ISPSC grouping overview). */
+  familyHelp?: string;
   options: PoolType[];
 }
 
@@ -173,16 +189,22 @@ export const POOL_TYPE_GROUPS: PoolTypeGroup[] = [
   {
     family: 'class-abc',
     label: 'Class A / B / C — Standard Pools',
+    familyHelp:
+      'Class A (competition), B (public), and C (semi-public) are the standard depth-classified pools in ISPSC. This app applies the depth-based turnover minimum for A–C when you enter average depth.',
     options: POOL_TYPES.filter((p) => ['Class A', 'Class B', 'Class C'].includes(p.ispscClass)),
   },
   {
     family: 'class-d',
     label: 'Class D — Aquatic Recreation',
+    familyHelp:
+      'Class D covers aquatic recreation venues (waves, slides, activity pools, rivers, spray features, vortex). Each D sub-type has its own turnover and bather-load assumptions—pick the one that matches the water feature.',
     options: POOL_TYPES.filter((p) => p.ispscClass.startsWith('Class D')),
   },
   {
     family: 'class-efh',
     label: 'Class E / F / H — Specialty',
+    familyHelp:
+      'Class E spas and hot tubs, Class F wading, Class H therapeutic pools—smaller volumes, warmer water, or different chemistry and turnover expectations than main pools.',
     options: POOL_TYPES.filter((p) =>
       p.ispscClass.startsWith('Class E') ||
       p.ispscClass.startsWith('Class F') ||
@@ -192,6 +214,8 @@ export const POOL_TYPE_GROUPS: PoolTypeGroup[] = [
   {
     family: 'unclassified',
     label: 'Other',
+    familyHelp:
+      'Types without an ISPSC letter class here, or custom “Other.” Turnover values are sensible defaults for sizing—confirm classification and local amendments with the AHJ.',
     options: POOL_TYPES.filter((p) => p.ispscClass === '—' || p.ispscClass === 'Other'),
   },
 ];

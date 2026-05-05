@@ -2,6 +2,13 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Geocoding (Project Location)
+
+The configurator **Project Location** step calls OpenStreetMap **Nominatim** for address suggestions and reverse geocoding.
+
+- **Local dev and `vite preview`:** requests go to `/api/nominatim`, proxied in [`vite.config.ts`](vite.config.ts) to `nominatim.openstreetmap.org` with a compliant `User-Agent`.
+- **Other production hosts:** set environment variable **`VITE_NOMINATIM_URL`** to your own HTTPS reverse proxy of Nominatim (same path style as the public API). See [`src/utils/geocoding.ts`](src/utils/geocoding.ts) for details.
+
 Currently, two official plugins are available:
 
 - [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh

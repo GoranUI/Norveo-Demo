@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { InfoHint } from './InfoHint';
 import styles from './ui.module.css';
 
 function fmtCost(n: number): string {
@@ -10,7 +11,9 @@ function fmtCost(n: number): string {
 export interface NestedGroup {
   family: string;
   label: string;
-  options: { value: string; label: string; cost?: number }[];
+  /** Optional overview copy for the family (info popover). */
+  familyHelp?: string;
+  options: { value: string; label: string; cost?: number; helpText?: string }[];
 }
 
 interface BaseProps {
@@ -123,27 +126,31 @@ export function NestedOptionButton({
             : Boolean(findValueInFamily(groups, multiValues, group.family));
           const showSelectedIndicator = !isMulti ? isExpanded : containsValue;
           return (
-            <button
-              key={group.family}
-              type="button"
-              className={`${styles.familyChip} ${disabled ? styles.familyChipDisabled : ''} ${isExpanded ? styles.familyChipActive : ''} ${containsValue ? styles.familyChipSelected : ''}`}
-              aria-expanded={!isMulti ? isExpanded : containsValue}
-              aria-pressed={containsValue}
-              onClick={() => handleFamilyClick(group)}
-              disabled={disabled}
-            >
-              <span className={styles.familyIndicatorWrap}>
-                <span
-                  className={`${!isMulti ? styles.familyRadioFace : styles.checkbox} ${styles.familyCheckboxFace}`}
-                  aria-hidden
-                >
-                  {!isMulti
-                    ? showSelectedIndicator && <span className={styles.familyRadioInner} />
-                    : containsValue && <span className={styles.checkmark}>✓</span>}
+            <span key={group.family} className={styles.familyChipWrap}>
+              <button
+                type="button"
+                className={`${styles.familyChip} ${disabled ? styles.familyChipDisabled : ''} ${isExpanded ? styles.familyChipActive : ''} ${containsValue ? styles.familyChipSelected : ''}`}
+                aria-expanded={!isMulti ? isExpanded : containsValue}
+                aria-pressed={containsValue}
+                onClick={() => handleFamilyClick(group)}
+                disabled={disabled}
+              >
+                <span className={styles.familyIndicatorWrap}>
+                  <span
+                    className={`${!isMulti ? styles.familyRadioFace : styles.checkbox} ${styles.familyCheckboxFace}`}
+                    aria-hidden
+                  >
+                    {!isMulti
+                      ? showSelectedIndicator && <span className={styles.familyRadioInner} />
+                      : containsValue && <span className={styles.checkmark}>✓</span>}
+                  </span>
                 </span>
-              </span>
-              <span className={styles.familyLabel}>{group.label}</span>
-            </button>
+                <span className={styles.familyLabel}>{group.label}</span>
+              </button>
+              {group.familyHelp && (
+                <InfoHint contextLabel={group.label} text={group.familyHelp} disabled={disabled} />
+              )}
+            </span>
           );
         })}
       </div>
@@ -167,23 +174,27 @@ export function NestedOptionButton({
                 ? singleValue === opt.value
                 : multiValues.includes(opt.value);
               return (
-                <button
-                  key={opt.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={isSelected}
-                  className={`${styles.optionBtn} ${isSelected ? styles.optionActive : ''}`}
-                  onClick={() => handleVariantClick(group, opt.value)}
-                  disabled={disabled}
-                >
-                  <span className={styles.optionDot}>
-                    {isSelected && <span className={styles.optionDotInner} />}
-                  </span>
-                  <span className={styles.optionLabel}>{opt.label}</span>
-                  {hasCosts && opt.cost != null && (
-                    <span className={styles.optionCost}>{fmtCost(opt.cost)}</span>
+                <div key={opt.value} className={styles.optionHintRow}>
+                  <button
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    className={`${styles.optionBtn} ${isSelected ? styles.optionActive : ''}`}
+                    onClick={() => handleVariantClick(group, opt.value)}
+                    disabled={disabled}
+                  >
+                    <span className={styles.optionDot}>
+                      {isSelected && <span className={styles.optionDotInner} />}
+                    </span>
+                    <span className={styles.optionLabel}>{opt.label}</span>
+                    {hasCosts && opt.cost != null && (
+                      <span className={styles.optionCost}>{fmtCost(opt.cost)}</span>
+                    )}
+                  </button>
+                  {opt.helpText && (
+                    <InfoHint contextLabel={opt.label} text={opt.helpText} disabled={disabled} />
                   )}
-                </button>
+                </div>
               );
             })}
           </div>

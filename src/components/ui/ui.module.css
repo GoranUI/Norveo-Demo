@@ -380,6 +380,82 @@
   font-weight: 500;
 }
 
+.familyChipWrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.optionHintRow {
+  display: flex;
+  align-items: stretch;
+  gap: var(--sp-2);
+  width: 100%;
+}
+
+.optionHintRow .optionBtn {
+  flex: 1;
+  min-width: 0;
+}
+
+.infoHintWrap {
+  position: relative;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+.infoHintBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-input);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+
+.infoHintBtn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.infoHintBtn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.infoHintBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.infoHintPanel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 50;
+  width: min(300px, 78vw);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: var(--sp-3) var(--sp-4);
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 28px color-mix(in srgb, #000 32%, transparent);
+}
+
 /* ── Panel Header (reusable) ── */
 .panelHeader {
   display: flex;

@@ -1,3 +1,5 @@
+import { isReasonableEmail } from './utils/email';
+
 // ── Workspaces (bottom tabs) ──
 export type Workspace =
   | 'configurator'
@@ -330,9 +332,18 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     id: ConfigStep.Customer,
     label: 'Customer',
     group: 'Project Information',
-    getValue: (d) => d.ownerCrmLink ? truncate(d.ownerCrmLink) : '',
+    getValue: (d) => {
+      const parts = [d.clientCompanyName, d.ownerName].filter(Boolean);
+      return truncate(parts.join(' · ') || d.ownerCrmLink || '');
+    },
     isVisible: () => true,
-    isComplete: (d) => !!d.ownerCrmLink,
+    isComplete: (d) =>
+      !!d.clientCompanyName?.trim() &&
+      !!d.clientContactName?.trim() &&
+      !!d.clientContactEmail?.trim() &&
+      isReasonableEmail(d.clientContactEmail) &&
+      !!d.ownerName?.trim() &&
+      !!d.ownerAddress?.trim(),
   },
   {
     id: ConfigStep.ProjectType,

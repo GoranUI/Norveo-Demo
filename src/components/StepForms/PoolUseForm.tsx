@@ -1,6 +1,6 @@
 import { useApp } from '../../store';
 import { NestedOptionButton, type NestedGroup } from '../ui/NestedOptionButton';
-import { POOL_TYPE_GROUPS, getPoolType } from '../../data/poolTypes';
+import { POOL_TYPE_GROUPS, getPoolType, getPoolTypeHelpBlurb } from '../../data/poolTypes';
 import { getOptionCost } from '../../data/configCosts';
 import styles from './forms.module.css';
 import poolTypeStyles from './PoolUseForm.module.css';
@@ -9,10 +9,12 @@ import poolTypeStyles from './PoolUseForm.module.css';
 const NESTED_GROUPS: NestedGroup[] = POOL_TYPE_GROUPS.map((g) => ({
   family: g.family,
   label: g.label,
+  familyHelp: g.familyHelp,
   options: g.options.map((p) => ({
     value: p.id,
     label: p.label,
     cost: getOptionCost('poolUseType', p.id)?.cost,
+    helpText: getPoolTypeHelpBlurb(p),
   })),
 }));
 

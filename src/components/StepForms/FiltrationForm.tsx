@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { CheckCircle2, Filter as FilterIcon, Droplets } from 'lucide-react';
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
@@ -56,6 +56,233 @@ interface NumFieldProps {
   isDefault?: boolean;
 }
 
+interface FiltrationCatalogueBlockProps {
+  baseCatalogueRows: FilterProduct[];
+  disabled: boolean;
+  filterCount: number;
+  selectedFilterModelId: string | null;
+  recirculationGpm: number;
+  designRate: number;
+  onSelect: (f: FilterProduct) => void;
+}
+
+/** Toolbar + table; remounted when `mediaType` / brand preference change so filter UI resets without an effect. */
+function FiltrationCatalogueBlock({
+  baseCatalogueRows,
+  disabled,
+  filterCount,
+  selectedFilterModelId,
+  recirculationGpm,
+  designRate,
+  onSelect,
+}: FiltrationCatalogueBlockProps) {
+  const priceBounds = useMemo(() => {
+    if (!baseCatalogueRows.length) return { min: 0, max: 0 };
+    const prices = baseCatalogueRows.map((r) => r.price);
+    return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [baseCatalogueRows]);
+
+  const brandsInCatalogue = useMemo(() => {
+    const set = new Set(baseCatalogueRows.map((r) => r.brand));
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }, [baseCatalogueRows]);
+
+  const [priceFloor, setPriceFloor] = useState<number | ''>('');
+  const [priceCeil, setPriceCeil] = useState<number | ''>('');
+  const [brandFilter, setBrandFilter] = useState<string[]>([]);
+  const [meetsFilter, setMeetsFilter] = useState<'all' | 'yes' | 'no'>('all');
+  const [sortKey, setSortKey] = useState<'area' | 'price' | 'brand'>('area');
+
+  const displayedCatalogueRows = useMemo(() => {
+    let rows = [...baseCatalogueRows];
+    if (priceFloor !== '') rows = rows.filter((r) => r.price >= priceFloor);
+    if (priceCeil !== '') rows = rows.filter((r) => r.price <= priceCeil);
+    if (brandFilter.length) rows = rows.filter((r) => brandFilter.includes(r.brand));
+    rows = rows.filter((f) => {
+      const totalArea = f.filterAreaSqFt * Math.max(1, filterCount);
+      const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
+      const meetsDesign = totalArea > 0 && rate <= designRate;
+      if (meetsFilter === 'yes') return meetsDesign;
+      if (meetsFilter === 'no') return totalArea > 0 && !meetsDesign;
+      return true;
+    });
+    rows.sort((a, b) => {
+      if (sortKey === 'price') return a.price - b.price || a.model.localeCompare(b.model);
+      if (sortKey === 'brand') return a.brand.localeCompare(b.brand) || a.price - b.price;
+      return a.filterAreaSqFt - b.filterAreaSqFt || a.price - b.price;
+    });
+    return rows;
+  }, [
+    baseCatalogueRows,
+    priceFloor,
+    priceCeil,
+    brandFilter,
+    meetsFilter,
+    sortKey,
+    filterCount,
+    recirculationGpm,
+    designRate,
+  ]);
+
+  return (
+    <>
+      <div className={styles.catToolbar} aria-label="Catalogue filters">
+        <div className={styles.catToolbarRow}>
+          <div className={styles.catField}>
+            <span className={styles.catFieldLabel}>Price min</span>
+            <input
+              type="number"
+              className={styles.catInput}
+              min={0}
+              step={50}
+              placeholder={priceBounds.min ? String(priceBounds.min) : '—'}
+              value={priceFloor === '' ? '' : priceFloor}
+              onChange={(e) => {
+                const v = e.target.value;
+                setPriceFloor(v === '' ? '' : Number(v));
+              }}
+              disabled={disabled}
+              aria-label="Minimum price"
+            />
+          </div>
+          <div className={styles.catField}>
+            <span className={styles.catFieldLabel}>Price max</span>
+            <input
+              type="number"
+              className={styles.catInput}
+              min={0}
+              step={50}
+              placeholder={priceBounds.max ? String(priceBounds.max) : '—'}
+              value={priceCeil === '' ? '' : priceCeil}
+              onChange={(e) => {
+                const v = e.target.value;
+                setPriceCeil(v === '' ? '' : Number(v));
+              }}
+              disabled={disabled}
+              aria-label="Maximum price"
+            />
+          </div>
+          <div className={styles.catField}>
+            <span className={styles.catFieldLabel}>Meets design rate</span>
+            <select
+              className={styles.catSelect}
+              value={meetsFilter}
+              onChange={(e) => setMeetsFilter(e.target.value as 'all' | 'yes' | 'no')}
+              disabled={disabled}
+              aria-label="Filter rows by design rate"
+            >
+              <option value="all">All rows</option>
+              <option value="yes">Meets design (green)</option>
+              <option value="no">Over design rate</option>
+            </select>
+          </div>
+          <div className={styles.catField}>
+            <span className={styles.catFieldLabel}>Sort</span>
+            <select
+              className={styles.catSelect}
+              value={sortKey}
+              onChange={(e) => setSortKey(e.target.value as 'area' | 'price' | 'brand')}
+              disabled={disabled}
+              aria-label="Sort catalogue"
+            >
+              <option value="area">Tank area (ft²)</option>
+              <option value="price">Price</option>
+              <option value="brand">Brand</option>
+            </select>
+          </div>
+        </div>
+        {brandsInCatalogue.length > 1 && (
+          <div className={styles.catField}>
+            <span className={styles.catFieldLabel}>Brands (multi-select)</span>
+            <div className={styles.brandChips}>
+              {brandsInCatalogue.map((b) => {
+                const on = brandFilter.includes(b);
+                return (
+                  <label key={b} className={styles.brandChip}>
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      disabled={disabled}
+                      onChange={() => {
+                        setBrandFilter((prev) =>
+                          on ? prev.filter((x) => x !== b) : [...prev, b],
+                        );
+                      }}
+                    />
+                    {b}
+                  </label>
+                );
+              })}
+            </div>
+          </div>
+        )}
+        <div className={styles.toolbarMeta}>
+          Showing {displayedCatalogueRows.length} of {baseCatalogueRows.length} models
+          {priceBounds.min !== priceBounds.max && (
+            <>
+              {' '}
+              · catalogue ${priceBounds.min.toLocaleString()}–${priceBounds.max.toLocaleString()}
+            </>
+          )}
+        </div>
+      </div>
+      {displayedCatalogueRows.length === 0 ? (
+        <div className={styles.emptyState}>No models match the current filters. Widen price or clear brand checkboxes.</div>
+      ) : (
+        <div className={styles.compTable} role="table" aria-label="Filter selection">
+          <div className={styles.compHead} role="row">
+            <div role="columnheader" className={styles.compHeadRadio} aria-label="Selection" />
+            <div role="columnheader">Model</div>
+            <div role="columnheader" className={styles.compHeadRight}>Per-tank ft²</div>
+            <div role="columnheader" className={styles.compHeadRight}>Total ft²</div>
+            <div role="columnheader" className={styles.compHeadRight}>Rate gpm/ft²</div>
+          </div>
+          {displayedCatalogueRows.map((f) => {
+            const isSelected = selectedFilterModelId === f.id;
+            const totalArea = f.filterAreaSqFt * Math.max(1, filterCount);
+            const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
+            const meetsDesign = totalArea > 0 && rate <= designRate;
+            return (
+              <button
+                key={f.id}
+                type="button"
+                role="row"
+                className={`${styles.compRow} ${meetsDesign ? styles.compRowMeets : styles.compRowOver} ${isSelected ? styles.compRowSelected : ''}`}
+                onClick={() => onSelect(f)}
+                disabled={disabled}
+                aria-pressed={isSelected}
+                aria-label={`${f.brand} ${f.model}, ${fmtNum(f.filterAreaSqFt, 1)} square feet per tank${isSelected ? ', selected' : ''}`}
+              >
+                <div className={styles.compSelectCell} role="cell">
+                  <span className={styles.compRadio} aria-hidden="true">
+                    {isSelected && <span className={styles.compRadioInner} />}
+                  </span>
+                </div>
+                <div className={styles.compCell} role="cell">
+                  <span className={styles.compModelBrand}>{f.brand}</span>
+                  {f.model}
+                </div>
+                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
+                  {fmtNum(f.filterAreaSqFt, 2)}
+                </div>
+                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
+                  {fmtNum(totalArea, 2)}
+                </div>
+                <div
+                  className={`${styles.compCell} ${styles.compCellRight} ${meetsDesign ? '' : styles.compMuted}`}
+                  role="cell"
+                >
+                  {totalArea > 0 ? fmtNum(rate, 2) : '—'}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </>
+  );
+}
+
 function NumField({ label, value, unit, hint, disabled, onChange, min = 0, step = 1, isDefault }: NumFieldProps) {
   return (
     <label className={styles.field}>
@@ -101,11 +328,11 @@ export function FiltrationForm() {
   const brand = d.brandPreferences.filtration;
 
   // Catalogue rows for the chosen media (and optional preferred brand).
-  const catalogueRows = useMemo(() => {
+  const baseCatalogueRows = useMemo(() => {
     let rows: FilterProduct[] = FILTER_CATALOG;
     if (mediaType) rows = rows.filter((f) => f.mediaType === mediaType);
     if (brand) rows = rows.filter((f) => f.brand === brand);
-    return rows.sort((a, b) => a.filterAreaSqFt - b.filterAreaSqFt);
+    return rows;
   }, [mediaType, brand]);
 
   const selectedFilter = useMemo(
@@ -115,6 +342,7 @@ export function FiltrationForm() {
 
   const designRateDefault = defaultDesignRate(mediaType, d.poolUseType);
   const designRate = d.filterDesignRateGpmPerSf ?? designRateDefault;
+
   const backwashRateDefault = defaultBackwashRate(mediaType);
   const backwashRate = d.filterBackwashRateGpmPerSf ?? backwashRateDefault;
 
@@ -275,62 +503,23 @@ export function FiltrationForm() {
         are marked with a green bar.
       </p>
 
-      {catalogueRows.length === 0 ? (
+      {baseCatalogueRows.length === 0 ? (
         <div className={styles.emptyState}>
           {brand
             ? `No ${mediaType ?? 'filter'} models from ${brand} in the catalogue. Clear the brand preference or switch media to see options.`
             : 'No filter models in the catalogue match the current media. Pick a media type first.'}
         </div>
       ) : (
-        <div className={styles.compTable} role="table" aria-label="Filter selection">
-          <div className={styles.compHead} role="row">
-            <div role="columnheader" className={styles.compHeadRadio} aria-label="Selection" />
-            <div role="columnheader">Model</div>
-            <div role="columnheader" className={styles.compHeadRight}>Per-tank ft²</div>
-            <div role="columnheader" className={styles.compHeadRight}>Total ft²</div>
-            <div role="columnheader" className={styles.compHeadRight}>Rate gpm/ft²</div>
-          </div>
-          {catalogueRows.map((f) => {
-            const isSelected = d.selectedFilterModelId === f.id;
-            const totalArea = f.filterAreaSqFt * Math.max(1, d.filterCount);
-            const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
-            const meetsDesign = totalArea > 0 && rate <= designRate;
-            return (
-              <button
-                key={f.id}
-                type="button"
-                role="row"
-                className={`${styles.compRow} ${meetsDesign ? styles.compRowMeets : styles.compRowOver} ${isSelected ? styles.compRowSelected : ''}`}
-                onClick={() => handleSelectFilter(f)}
-                disabled={disabled}
-                aria-pressed={isSelected}
-                aria-label={`${f.brand} ${f.model}, ${fmtNum(f.filterAreaSqFt, 1)} square feet per tank${isSelected ? ', selected' : ''}`}
-              >
-                <div className={styles.compSelectCell} role="cell">
-                  <span className={styles.compRadio} aria-hidden="true">
-                    {isSelected && <span className={styles.compRadioInner} />}
-                  </span>
-                </div>
-                <div className={styles.compCell} role="cell">
-                  <span className={styles.compModelBrand}>{f.brand}</span>
-                  {f.model}
-                </div>
-                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
-                  {fmtNum(f.filterAreaSqFt, 2)}
-                </div>
-                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
-                  {fmtNum(totalArea, 2)}
-                </div>
-                <div
-                  className={`${styles.compCell} ${styles.compCellRight} ${meetsDesign ? '' : styles.compMuted}`}
-                  role="cell"
-                >
-                  {totalArea > 0 ? fmtNum(rate, 2) : '—'}
-                </div>
-              </button>
-            );
-          })}
-        </div>
+        <FiltrationCatalogueBlock
+          key={`${mediaType ?? 'none'}|${brand ?? 'any'}`}
+          baseCatalogueRows={baseCatalogueRows}
+          disabled={disabled}
+          filterCount={d.filterCount}
+          selectedFilterModelId={d.selectedFilterModelId}
+          recirculationGpm={recirculationGpm}
+          designRate={designRate}
+          onSelect={handleSelectFilter}
+        />
       )}
 
       {/* ── Capacity Actuals ── */}

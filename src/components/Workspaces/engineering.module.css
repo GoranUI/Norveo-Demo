@@ -516,7 +516,91 @@
   font-family: var(--font-mono);
 }
 
-/* ── Stacked accordion (Pump / Filter / Heater) ── */
+.eqOpenConfigRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+  padding: 0 var(--sp-4) var(--sp-2);
+}
+
+.eqOpenConfigLabel {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-right: 2px;
+}
+
+.eqOpenConfigBtn {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+  cursor: pointer;
+  font-family: inherit;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.eqOpenConfigBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  border-color: var(--accent);
+  color: var(--text-bright);
+}
+
+.eqOpenConfigBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.eqTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-1);
+  padding: 0 var(--sp-3) var(--sp-2);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.eqTab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-secondary);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: inherit;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+}
+
+.eqTab:hover {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  color: var(--text-bright);
+}
+
+.eqTabActive {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  background: color-mix(in srgb, var(--accent) 10%, var(--bg-input));
+  color: var(--text-bright);
+}
+
+.eqTabBody {
+  padding: var(--sp-2) var(--sp-3) var(--sp-3);
+}
+
+.eqActiveSummary {
+  padding: 0 var(--sp-4) var(--sp-2);
+  display: flex;
+  justify-content: flex-end;
+  min-height: 1.25rem;
+}
+
+/* ── Stacked accordion (Pump / Filter / Heater) — legacy; tab panel reuses inner classes ── */
 
 .eqAccordion {
   display: flex;
