@@ -124,7 +124,6 @@ export function NestedOptionButton({
           const containsValue = !isMulti
             ? group.family === valueFamily
             : Boolean(findValueInFamily(groups, multiValues, group.family));
-          const showSelectedIndicator = !isMulti ? isExpanded : containsValue;
           return (
             <span key={group.family} className={styles.familyChipWrap}>
               <button
@@ -141,7 +140,7 @@ export function NestedOptionButton({
                     aria-hidden
                   >
                     {!isMulti
-                      ? showSelectedIndicator && <span className={styles.familyRadioInner} />
+                      ? containsValue && <span className={styles.familyRadioInner} />
                       : containsValue && <span className={styles.checkmark}>✓</span>}
                   </span>
                 </span>
