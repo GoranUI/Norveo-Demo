@@ -86,7 +86,8 @@
   gap: var(--sp-3);
   width: 100%;
   min-height: 36px;
-  background: var(--bg-input);
+  /* Slightly below panel luminance so rows read as discrete tiles (not stark white inputs in light theme). */
+  background: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
   border: 1px solid var(--border);
   border-radius: var(--radius);
   padding: var(--sp-2) var(--sp-4);
@@ -95,6 +96,15 @@
   cursor: pointer;
   text-align: left;
   transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.optionBtn:focus {
+  outline: none;
+}
+
+.optionBtn:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 .optionBtn:hover:not(:disabled) {
@@ -108,14 +118,22 @@
 }
 
 .optionActive {
-  background: color-mix(in srgb, var(--accent) 10%, var(--bg-input));
+  background: color-mix(
+    in srgb,
+    var(--accent) 12%,
+    color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel))
+  );
   border-color: var(--accent);
   color: var(--text-bright);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 15%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
 }
 
 .optionActive:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--accent) 14%, var(--bg-input));
+  background: color-mix(
+    in srgb,
+    var(--accent) 16%,
+    color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel))
+  );
 }
 
 .optionLabel {
@@ -174,6 +192,7 @@
 
 /* ── Checkbox ── */
 .checkbox {
+  box-sizing: border-box;
   width: 14px;
   height: 14px;
   border-radius: 3px;
@@ -183,6 +202,8 @@
   justify-content: center;
   flex-shrink: 0;
   font-size: var(--fs-canvas);
+  /* Inset tone so the box never reads as a white hole against the row. */
+  background: color-mix(in srgb, var(--bg-base) 18%, transparent);
   transition: border-color 0.15s, background 0.15s;
 }
 
