@@ -597,10 +597,13 @@ export const STEP_GROUPS: StepGroup[] = [
   'Review',
 ];
 
-/** Groups rendered on the Configurator workspace (excludes wizard-only Project Information and Review). */
-export const CONFIGURATOR_STEP_GROUPS: StepGroup[] = STEP_GROUPS.filter(
-  (g) => g !== 'Review' && g !== 'Project Information',
-);
+/**
+ * Groups rendered on the Configurator workspace (full-width `ConfiguratorPage`).
+ * Includes **Project Information** so Customer / Project Location / Project Type stay editable after
+ * the new-project wizard — excluding them hid #3 from the nav once you entered the workspace.
+ * **Review** stays out so Final Review is not duplicated in this scroll (handled elsewhere).
+ */
+export const CONFIGURATOR_STEP_GROUPS: StepGroup[] = STEP_GROUPS.filter((g) => g !== 'Review');
 
 /** True when every visible step in the Configurator groups is complete (same rules as the configurator nav). */
 export function isConfiguratorWorkflowComplete(data: ProjectData): boolean {
