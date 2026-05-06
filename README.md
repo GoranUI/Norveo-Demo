@@ -7,6 +7,7 @@ This template provides a minimal setup to get React working in Vite with HMR and
 The configurator **Project Location** step calls OpenStreetMap **Nominatim** for address suggestions and reverse geocoding.
 
 - **Local dev and `vite preview`:** requests go to `/api/nominatim`, proxied in [`vite.config.ts`](vite.config.ts) to `nominatim.openstreetmap.org` with a compliant `User-Agent`.
+- **Vercel:** [`vercel.json`](vercel.json) rewrites `/api/nominatim/*` to Nominatim **before** the SPA fallback so geocoding is not served `index.html` by mistake.
 - **Other production hosts:** set environment variable **`VITE_NOMINATIM_URL`** to your own HTTPS reverse proxy of Nominatim (same path style as the public API). See [`src/utils/geocoding.ts`](src/utils/geocoding.ts) for details.
 
 Currently, two official plugins are available:

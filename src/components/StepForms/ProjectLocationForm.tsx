@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { LatLng, LatLngExpression, Map as LeafletMap, Marker as LeafletMarker } from 'leaflet';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerIcon from 'leaflet/dist/images/marker-icon.png';
@@ -114,7 +114,7 @@ export function ProjectLocationForm() {
 
   useEffect(() => {
     const q = queryString.trim();
-    if (q.length < 14) {
+    if (q.length < 8) {
       setHits([]);
       setGeoError(null);
       setSelectedHit(null);
@@ -128,7 +128,8 @@ export function ProjectLocationForm() {
     return () => window.clearTimeout(t);
   }, [queryString, runSearch]);
 
-  useEffect(() => {
+  /** Layout: map container stays mounted so ref is valid; avoids effect running before conditional DOM. */
+  useLayoutEffect(() => {
     if (!mapEnabled || !mapContainerRef.current || !mapFocus) return;
 
     const gen = ++mapLoadGen.current;
@@ -260,9 +261,20 @@ export function ProjectLocationForm() {
 
       <div className={geoStyles.geoInline}>
         <p className={geoStyles.geoHint}>
-          After you pause typing, we look up matches (OpenStreetMap). Pick a row or move the map pin, then{' '}
-          <strong>Apply to form</strong> when the suggestion looks right — your typed fields stay as-is until then.
+          After you pause typing (or use <strong>Look up address</strong>), we query OpenStreetMap once the combined
+          address is at least a few characters. Pick a row or move the map pin, then <strong>Apply to form</strong> when
+          the suggestion looks right — your typed fields stay as-is until then.
         </p>
+        <div className={geoStyles.geoActions}>
+          <button
+            type="button"
+            className={geoStyles.lookupBtn}
+            disabled={disabled || geoLoading || queryString.trim().length < 8}
+            onClick={() => void runSearch()}
+          >
+            Look up address
+          </button>
+        </div>
         {(geoLoading || geoError) && (
           <p className={`${geoStyles.inlineStatus} ${geoError ? geoStyles.geoStatusError : ''}`}>
             {geoError || 'Looking up address…'}
@@ -294,7 +306,13 @@ export function ProjectLocationForm() {
           </div>
         )}
 
-        {mapEnabled && <div ref={mapContainerRef} className={geoStyles.mapWrap} aria-label="Map — click or drag pin" />}
+        <div
+          ref={mapContainerRef}
+          className={geoStyles.mapWrap}
+          style={{ display: mapEnabled ? 'block' : 'none' }}
+          aria-hidden={!mapEnabled}
+          aria-label="Map — click or drag pin"
+        />
 
         {pending && hasPendingDiff && (
           <div className={geoStyles.pendingBanner}>

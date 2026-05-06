@@ -11,6 +11,31 @@
   line-height: 1.5;
 }
 
+.geoActions {
+  margin-bottom: var(--sp-3);
+}
+
+.lookupBtn {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.lookupBtn:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 35%, var(--border));
+  background: var(--bg-hover);
+}
+
+.lookupBtn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
 .inlineStatus {
   font-size: var(--fs-xs);
   color: var(--text-secondary);
