@@ -1,3 +1,4 @@
+import type { HTMLInputTypeAttribute } from 'react';
 import styles from './ui.module.css';
 
 interface Props {
@@ -7,9 +8,20 @@ interface Props {
   placeholder?: string;
   disabled?: boolean;
   required?: boolean;
+  type?: HTMLInputTypeAttribute;
+  autoComplete?: string;
 }
 
-export function TextInput({ label, value, onChange, placeholder, disabled, required }: Props) {
+export function TextInput({
+  label,
+  value,
+  onChange,
+  placeholder,
+  disabled,
+  required,
+  type = 'text',
+  autoComplete,
+}: Props) {
   return (
     <div className={styles.field}>
       <label className={styles.label}>
@@ -18,11 +30,12 @@ export function TextInput({ label, value, onChange, placeholder, disabled, requi
       </label>
       <input
         className={styles.input}
-        type="text"
+        type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
         disabled={disabled}
+        autoComplete={autoComplete}
       />
     </div>
   );

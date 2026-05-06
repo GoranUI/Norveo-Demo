@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   Check,
   ChevronDown,
@@ -11,6 +11,7 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import { useApp } from '../../store';
+import { ConfigStep } from '../../types';
 import { getBrandsForCategory } from '../../data/brands';
 import {
   matchingPumps,
@@ -46,6 +47,13 @@ interface SectionMeta {
   icon: typeof Wrench;
   needHint: (designGpm: number, requiredBtuHr: number, filtrationType: string | null) => string;
 }
+
+/** Configurator steps for “open in full wizard” — pump has no dedicated step; brands cover procurement prefs. */
+const OPEN_IN_CONFIGURATOR: Record<SectionId, ConfigStep> = {
+  pump: ConfigStep.MechanicalBrand,
+  filter: ConfigStep.Filtration,
+  heater: ConfigStep.Heating,
+};
 
 const SECTIONS: SectionMeta[] = [
   {
@@ -136,11 +144,18 @@ export function EquipmentOptionsPanel({ designGpm, requiredBtuHr }: Props) {
     return (product as HeaterProduct).outputBtuHr >= requiredBtuHr;
   }
 
-  // ── Initial expanded section: first category without a selection (mount only) ──
-  const [expanded, setExpanded] = useState<SectionId | null>(() => {
+  const [activeTab, setActiveTab] = useState<SectionId>(() => {
     const firstUnselected = SECTIONS.find((s) => !selections[s.id]);
-    return firstUnselected?.id ?? null;
+    return firstUnselected?.id ?? 'pump';
   });
+
+  const openConfigurator = useCallback(
+    (step: ConfigStep) => {
+      dispatch({ type: 'SET_WORKSPACE', workspace: 'configurator' });
+      dispatch({ type: 'NAVIGATE_TO_STEP', step });
+    },
+    [dispatch],
+  );
 
   // ── Per-section filter state ──
   const [filters, setFilters] = useState<Record<SectionId, SectionFilterState>>({
@@ -539,39 +554,66 @@ export function EquipmentOptionsPanel({ designGpm, requiredBtuHr }: Props) {
         )}
       </div>
 
-      {/* Stacked accordion */}
-      <div className={styles.eqAccordion}>
+      <div className={styles.eqOpenConfigRow}>
+        <span className={styles.eqOpenConfigLabel}>Open configurator</span>
+        <button
+          type="button"
+          className={styles.eqOpenConfigBtn}
+          disabled={d.isFinalized}
+          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.pump)}
+        >
+          Pump brands
+        </button>
+        <button
+          type="button"
+          className={styles.eqOpenConfigBtn}
+          disabled={d.isFinalized}
+          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.filter)}
+        >
+          Filtration
+        </button>
+        <button
+          type="button"
+          className={styles.eqOpenConfigBtn}
+          disabled={d.isFinalized}
+          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.heater)}
+        >
+          Heating
+        </button>
+      </div>
+
+      <div className={styles.eqTabs} role="tablist" aria-label="Equipment category">
         {SECTIONS.map((meta) => {
-          const isOpen = expanded === meta.id;
           const selected = selections[meta.id];
           const Icon = meta.icon;
+          const isActive = activeTab === meta.id;
           return (
-            <section
+            <button
               key={meta.id}
-              className={`${styles.eqSection} ${isOpen ? styles.eqSectionOpen : ''}`}
+              type="button"
+              role="tab"
+              aria-selected={isActive}
+              className={`${styles.eqTab} ${isActive ? styles.eqTabActive : ''}`}
+              onClick={() => setActiveTab(meta.id)}
             >
-              <button
-                type="button"
-                className={styles.eqSectionHeader}
-                aria-expanded={isOpen}
-                onClick={() => setExpanded(isOpen ? null : meta.id)}
-              >
-                <ChevronDown
-                  size={14}
-                  className={`${styles.eqChevron} ${isOpen ? styles.eqChevronOpen : ''}`}
-                  aria-hidden
-                />
-                <Icon size={14} className={styles.eqSectionIcon} aria-hidden />
-                <span className={styles.eqSectionLabel}>{meta.label}</span>
-                {renderStatus(selected)}
-                <span className={styles.eqSectionSummary}>
-                  {renderSummary(meta.id, selected)}
-                </span>
-              </button>
-              {isOpen && renderSectionBody(meta.id)}
-            </section>
+              <Icon size={14} aria-hidden />
+              {meta.label}
+              {renderStatus(selected)}
+            </button>
           );
         })}
+      </div>
+
+      <div className={styles.eqActiveSummary}>
+        <span className={styles.eqSectionSummary}>
+          {renderSummary(activeTab, selections[activeTab])}
+        </span>
+      </div>
+
+      <div className={styles.eqTabBody} role="tabpanel">
+        <section className={`${styles.eqSection} ${styles.eqSectionOpen}`}>
+          {renderSectionBody(activeTab)}
+        </section>
       </div>
     </div>
   );

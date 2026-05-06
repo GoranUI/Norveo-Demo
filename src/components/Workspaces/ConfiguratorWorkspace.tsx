@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Check, AlertTriangle, ChevronDown, ChevronRight, Info, Pencil } from 'lucide-react';
 import { useApp } from '../../store';
 import { ConfigStep } from '../../types';
@@ -318,8 +318,45 @@ export function EngineeringWorkspace() {
   const gpmPerSkimmer = Math.round((designGpm * 0.5) / skimmerCount);
   const gpmPerMainDrain = Math.round((designGpm * 0.5) / mainDrainCount);
 
+  const engScrollRef = useRef<HTMLDivElement>(null);
+  const engScrollKey = useMemo(
+    () =>
+      `norveo-eng-scroll:${[d.projectName, d.projectAddress, d.projectCity].join('|').slice(0, 220)}`,
+    [d.projectName, d.projectAddress, d.projectCity],
+  );
+
+  useEffect(() => {
+    const el = engScrollRef.current;
+    if (!el) return;
+    const raw = sessionStorage.getItem(engScrollKey);
+    if (raw == null) return;
+    const y = Number(raw);
+    if (!Number.isFinite(y)) return;
+    requestAnimationFrame(() => {
+      el.scrollTop = y;
+    });
+  }, [engScrollKey]);
+
+  useEffect(() => {
+    const el = engScrollRef.current;
+    if (!el) return;
+    let debounce: number;
+    const save = () => {
+      window.clearTimeout(debounce);
+      debounce = window.setTimeout(() => {
+        sessionStorage.setItem(engScrollKey, String(el.scrollTop));
+      }, 200);
+    };
+    el.addEventListener('scroll', save, { passive: true });
+    return () => {
+      window.clearTimeout(debounce);
+      sessionStorage.setItem(engScrollKey, String(el.scrollTop));
+      el.removeEventListener('scroll', save);
+    };
+  }, [engScrollKey]);
+
   return (
-    <div className={styles.outer}>
+    <div ref={engScrollRef} className={styles.outer}>
       <div className={styles.legendStrip} aria-label="Row color key">
         <span className={styles.legendItem}>
           <span className={`${styles.legendSwatch} ${styles.legendSwatchCode}`} />

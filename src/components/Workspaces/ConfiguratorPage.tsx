@@ -405,6 +405,11 @@ function ConfiguratorPage() {
 
   const active = groupData.find((g) => g.group === selectedGroup);
 
+  const jumpNavSteps = useMemo(() => {
+    if (!active) return [];
+    return active.steps.filter((s) => renderedForms.has(s.id));
+  }, [active, renderedForms]);
+
   return (
     <div className={styles.outer}>
       <ProjectInfoBanner />
@@ -484,6 +489,36 @@ function ConfiguratorPage() {
                   </div>
                 </div>
               </div>
+              {jumpNavSteps.length > 2 && (
+                <div
+                  className={styles.stepSubNav}
+                  role="navigation"
+                  aria-label={`${active.group} — jump to step`}
+                >
+                  <span className={styles.stepSubNavLabel}>Jump to</span>
+                  <div className={styles.stepSubNavChips}>
+                    {jumpNavSteps.map((s) => {
+                      const done = s.isComplete(d);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className={`${styles.stepSubNavChip} ${done ? styles.stepSubNavChipDone : ''}`}
+                          onClick={() => {
+                            stepBlockRefs.current
+                              .get(s.id)
+                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            setHighlightStep(s.id);
+                            window.setTimeout(() => setHighlightStep(null), 1400);
+                          }}
+                        >
+                          {s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
               <div className={styles.paneBody}>
                 {active.steps
                   .filter((s) => renderedForms.has(s.id))
