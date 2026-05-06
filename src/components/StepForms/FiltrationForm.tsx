@@ -1,5 +1,11 @@
 import { useMemo, useState } from 'react';
-import { CheckCircle2, Filter as FilterIcon, Droplets } from 'lucide-react';
+import {
+  CheckCircle2,
+  Filter as FilterIcon,
+  Droplets,
+  SlidersHorizontal,
+  RotateCcw,
+} from 'lucide-react';
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
 import { BrandSelect } from '../ui/BrandSelect';
@@ -124,9 +130,41 @@ function FiltrationCatalogueBlock({
     designRate,
   ]);
 
+  const filtersDirty =
+    priceFloor !== '' ||
+    priceCeil !== '' ||
+    brandFilter.length > 0 ||
+    meetsFilter !== 'all' ||
+    sortKey !== 'area';
+
+  const clearToolbarFilters = () => {
+    setPriceFloor('');
+    setPriceCeil('');
+    setBrandFilter([]);
+    setMeetsFilter('all');
+    setSortKey('area');
+  };
+
   return (
-    <>
-      <div className={styles.catToolbar} aria-label="Catalogue filters">
+    <div className={styles.catSelectionShell}>
+      <div className={styles.catToolbar}>
+        <div className={styles.catToolbarHeader}>
+          <div className={styles.catToolbarTitle}>
+            <SlidersHorizontal size={14} className={styles.catToolbarTitleIcon} aria-hidden />
+            <span>Filter & sort</span>
+          </div>
+          {filtersDirty && (
+            <button
+              type="button"
+              className={styles.catResetBtn}
+              onClick={clearToolbarFilters}
+              disabled={disabled}
+            >
+              <RotateCcw size={12} aria-hidden />
+              Clear filters
+            </button>
+          )}
+        </div>
         <div className={styles.catToolbarRow}>
           <div className={styles.catField}>
             <span className={styles.catFieldLabel}>Price min</span>
@@ -198,7 +236,7 @@ function FiltrationCatalogueBlock({
               {brandsInCatalogue.map((b) => {
                 const on = brandFilter.includes(b);
                 return (
-                  <label key={b} className={styles.brandChip}>
+                  <label key={b} className={styles.catBrandToggle}>
                     <input
                       type="checkbox"
                       checked={on}
@@ -209,7 +247,7 @@ function FiltrationCatalogueBlock({
                         );
                       }}
                     />
-                    {b}
+                    <span>{b}</span>
                   </label>
                 );
               })}
@@ -217,19 +255,25 @@ function FiltrationCatalogueBlock({
           </div>
         )}
         <div className={styles.toolbarMeta}>
-          Showing {displayedCatalogueRows.length} of {baseCatalogueRows.length} models
+          <span className={styles.toolbarMetaBadge}>
+            {displayedCatalogueRows.length} / {baseCatalogueRows.length} models
+          </span>
           {priceBounds.min !== priceBounds.max && (
-            <>
-              {' '}
-              · catalogue ${priceBounds.min.toLocaleString()}–${priceBounds.max.toLocaleString()}
-            </>
+            <span className={styles.toolbarMetaRange}>
+              ${priceBounds.min.toLocaleString()}–${priceBounds.max.toLocaleString()} in catalogue
+            </span>
           )}
         </div>
       </div>
       {displayedCatalogueRows.length === 0 ? (
-        <div className={styles.emptyState}>No models match the current filters. Widen price or clear brand checkboxes.</div>
+        <div className={styles.catTablePane}>
+          <div className={styles.emptyState}>
+            No models match the current filters. Widen the price range or clear brand checkboxes.
+          </div>
+        </div>
       ) : (
-        <div className={styles.compTable} role="table" aria-label="Filter selection">
+        <div className={styles.catTablePane}>
+          <div className={styles.compTable} role="table" aria-label="Filter selection">
           <div className={styles.compHead} role="row">
             <div role="columnheader" className={styles.compHeadRadio} aria-label="Selection" />
             <div role="columnheader">Model</div>
@@ -277,9 +321,10 @@ function FiltrationCatalogueBlock({
               </button>
             );
           })}
+          </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

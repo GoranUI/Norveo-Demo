@@ -534,6 +534,7 @@
 /* ── Step blocks (forms inside right pane) ── */
 .stepBlock {
   border-bottom: 1px solid var(--border-light);
+  padding-top: var(--sp-6);
   padding-bottom: var(--sp-2);
   transition: background 0.2s;
 }
