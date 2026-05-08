@@ -70,6 +70,12 @@ export function makeEmptyPoolSection(label = ''): PoolSection {
   };
 }
 
+/** Super-shallow: depth under 2 ft, or bench / wet-deck regardless of depth. */
+export function isSuperShallowPoolSection(section: PoolSection): boolean {
+  if (section.type === 'wet-deck' || section.type === 'bench') return true;
+  return section.depth > 0 && section.depth < 2;
+}
+
 export const DEFAULT_POOL_SECTIONS: PoolSection[] = [
   { id: 'ps-default-shallow', label: 'Shallow end', type: 'open-area', area: 500, depth: 3.5 },
   { id: 'ps-default-main', label: 'Main body', type: 'open-area', area: 2000, depth: 4.5 },

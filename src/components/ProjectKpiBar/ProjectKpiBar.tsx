@@ -4,6 +4,7 @@ import { getTurnoverHoursForPoolType } from '../../data/engineering';
 import { estimateTotalDynamicHeadFt, pipesForDesignFlow } from '../../data/hydraulicsHead';
 import { flattenItems } from '../../data/projectItems';
 import { calculateVolumeTotals } from '../../data/poolSections';
+import { inflationHintPctTotal, monthsFromToday } from '../../data/inflationHints';
 import styles from './ProjectKpiBar.module.css';
 
 function fmt(n: number): string {
@@ -69,8 +70,23 @@ export function ProjectKpiBar() {
 
   const totalCost = useMemo(() => {
     const rows = flattenItems(state.projectItems);
-    return rows.reduce((s, r) => s + r.qty * r.price, 0);
+    return rows.reduce((s, r) => s + r.qty * (r.price + (r.markup ?? 0)), 0);
   }, [state.projectItems]);
+
+  const buildChip = (() => {
+    const iso = d.expectedBuildDate;
+    if (!iso) return null;
+    const dt = new Date(`${iso}T12:00:00`);
+    if (Number.isNaN(dt.getTime())) return null;
+    const label = dt.toLocaleString('en-US', { month: 'short', year: 'numeric' });
+    const hintPct = inflationHintPctTotal(iso);
+    const mo = monthsFromToday(iso);
+    const hint =
+      hintPct === null || mo <= 0
+        ? ''
+        : ` · ~+${hintPct}% material drift`;
+    return { text: `${label}${hint}` };
+  })();
 
   return (
     <div className={styles.strip}>
@@ -85,7 +101,13 @@ export function ProjectKpiBar() {
       <Kpi label="Turnover" value={`${turnoverHours}h`} />
 
       <div className={styles.separator} />
-      <Kpi label="Material Cost" value={fmt(totalCost)} accent />
+      <Kpi label="Material basis" value={fmt(totalCost)} accent />
+      {buildChip && (
+        <>
+          <div className={styles.divider} />
+          <Kpi label="Expected build" value={buildChip.text} />
+        </>
+      )}
     </div>
   );
 }

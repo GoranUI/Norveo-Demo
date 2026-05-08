@@ -7,6 +7,106 @@
   background: var(--bg-base);
 }
 
+/* ── BOM budget vs actual (admin) ── */
+.bomBudgetWrap {
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--sp-5);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-panel);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.bomBudgetRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-3);
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.bomBudgetLabel {
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bomBudgetMonth {
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 12px;
+}
+
+.bomBudgetHint {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.bomBudgetTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.bomBudgetTable th,
+.bomBudgetTable td {
+  padding: 6px 8px;
+  text-align: right;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bomBudgetTable th:first-child,
+.bomBudgetTable td:first-child {
+  text-align: left;
+}
+
+.bomBudgetTable th {
+  font-weight: 600;
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.bomBudgetTable tr.bomBudgetSub td {
+  font-weight: 600;
+  border-bottom: none;
+}
+
+.bomBudgetInput {
+  width: 88px;
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-size: 11px;
+  text-align: right;
+}
+
+.bomBudgetCell {
+  vertical-align: top;
+}
+
+.bomBudgetInputError {
+  display: block;
+  font-size: 10px;
+  color: var(--warn, #e6a23c);
+  margin-top: 4px;
+  text-align: left;
+  max-width: 120px;
+}
+
+.bomBudgetEmpty {
+  text-align: center;
+  color: var(--text-muted);
+  padding: var(--sp-4);
+}
+
 /* ── Toolbar ── */
 .toolbar {
   display: flex;

@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronRight, ChevronDown, Eye, EyeOff } from 'lucide-react';
+import { useApp } from '../../store';
+import { flattenItems } from '../../data/projectItems';
 import styles from './RightPanel.module.css';
 
 interface TreeItem {
@@ -43,6 +45,14 @@ const MODEL_TREE: TreeItem[] = [
   },
 ];
 
+function mergeTreeCounts(items: TreeItem[], qtyById: Record<string, number>): TreeItem[] {
+  return items.map((item) => ({
+    ...item,
+    count: qtyById[item.id] ?? item.count,
+    children: item.children ? mergeTreeCounts(item.children, qtyById) : item.children,
+  }));
+}
+
 function TreeNode({ item, depth = 0 }: { item: TreeItem; depth?: number }) {
   const [expanded, setExpanded] = useState(true);
   const [visible, setVisible] = useState(true);
@@ -82,9 +92,19 @@ function TreeNode({ item, depth = 0 }: { item: TreeItem; depth?: number }) {
 }
 
 export function ModelTree() {
+  const { state } = useApp();
+  const qtyById = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const it of flattenItems(state.projectItems)) {
+      m[it.id] = it.qty;
+    }
+    return m;
+  }, [state.projectItems]);
+  const tree = useMemo(() => mergeTreeCounts(MODEL_TREE, qtyById), [qtyById]);
+
   return (
     <div className={styles.treeContainer}>
-      {MODEL_TREE.map((item) => (
+      {tree.map((item) => (
         <TreeNode key={item.id} item={item} />
       ))}
     </div>

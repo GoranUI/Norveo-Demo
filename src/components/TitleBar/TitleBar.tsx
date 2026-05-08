@@ -1,6 +1,6 @@
 import {
   Save, Lock, Unlock, Share2, ChevronRight, ChevronLeft, Settings, BookTemplate,
-  Sun, Moon, SlidersHorizontal, PenTool, ClipboardList, Folder, Wrench,
+  Sun, Moon, SlidersHorizontal, PenTool, ClipboardList, Folder, Wrench, Library,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { WORKSPACE_LABELS, isConfiguratorWorkflowComplete } from '../../types';
@@ -14,6 +14,7 @@ const WORKSPACES: { id: Workspace; icon: React.FC<{ size?: number }> }[] = [
   { id: 'design', icon: PenTool },
   { id: 'engineering', icon: Wrench },
   { id: 'bom', icon: ClipboardList },
+  { id: 'catalog', icon: Library },
   { id: 'files', icon: Folder },
 ];
 

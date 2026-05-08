@@ -36,12 +36,32 @@ const CTX_MENU_GROUPS = [
 ];
 
 export function DrawingCanvas() {
-  const { state } = useApp();
-  const { gridEnabled, showDimensions, activeTool, canvasLayerView } = state;
+  const { state, dispatch } = useApp();
+  const { gridEnabled, showDimensions, activeTool, canvasLayerView, authoringMode } = state;
   const svgRef = useRef<SVGSVGElement>(null);
+  const planMsgTimerRef = useRef<number | null>(null);
   const show = (layer: string) => isLayerVisible(canvasLayerView, layer);
+  const underlay = state.data.pdfUnderlay;
+  const showUnderlay =
+    authoringMode === 'geometry' && activeTool === 'estimating' && underlay !== null;
 
   const [ctxMenu, setCtxMenu] = useState<{ x: number; y: number } | null>(null);
+  const [planDropMessage, setPlanDropMessage] = useState<string | null>(null);
+
+  const flashPlanMessage = useCallback((msg: string) => {
+    setPlanDropMessage(msg);
+    if (planMsgTimerRef.current != null) window.clearTimeout(planMsgTimerRef.current);
+    planMsgTimerRef.current = window.setTimeout(() => {
+      setPlanDropMessage(null);
+      planMsgTimerRef.current = null;
+    }, 5000);
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (planMsgTimerRef.current != null) window.clearTimeout(planMsgTimerRef.current);
+    };
+  }, []);
 
   const handleContextMenu = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -53,6 +73,68 @@ export function DrawingCanvas() {
     setCtxMenu(null);
   }, []);
 
+  const loadImageFile = useCallback(
+    (file: File) => {
+      if (!file.type.startsWith('image/')) {
+        flashPlanMessage('PNG, JPG, or WebP only in v1.');
+        return;
+      }
+      const reader = new FileReader();
+      reader.onerror = () => flashPlanMessage('Could not read that file.');
+      reader.onload = () => {
+        const dataUrl = typeof reader.result === 'string' ? reader.result : '';
+        if (!dataUrl) {
+          flashPlanMessage('Could not read that file.');
+          return;
+        }
+        setPlanDropMessage(null);
+        if (planMsgTimerRef.current != null) {
+          window.clearTimeout(planMsgTimerRef.current);
+          planMsgTimerRef.current = null;
+        }
+        dispatch({
+          type: 'UPDATE_DATA',
+          payload: {
+            pdfUnderlay: {
+              dataUrl,
+              widthIn: 44,
+              heightIn: 34,
+              opacity: 0.38,
+            },
+            estimatingMode: true,
+          },
+        });
+      };
+      reader.readAsDataURL(file);
+    },
+    [dispatch, flashPlanMessage],
+  );
+
+  const onDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      if (authoringMode !== 'geometry') return;
+      const f = e.dataTransfer.files[0];
+      if (!f) return;
+      if (!f.type.startsWith('image/')) {
+        flashPlanMessage('PNG, JPG, or WebP only in v1.');
+        return;
+      }
+      dispatch({ type: 'SET_ACTIVE_TOOL', tool: 'estimating' });
+      loadImageFile(f);
+    },
+    [authoringMode, dispatch, flashPlanMessage, loadImageFile],
+  );
+
+  const onDragOver = useCallback(
+    (e: React.DragEvent) => {
+      if (authoringMode === 'geometry') e.preventDefault();
+    },
+    [authoringMode],
+  );
+
+  const showGeometryPlanHint =
+    authoringMode === 'geometry' && activeTool !== 'estimating' && underlay === null;
   useEffect(() => {
     if (!ctxMenu) return;
     const onDown = (e: MouseEvent) => {
@@ -117,14 +199,78 @@ export function DrawingCanvas() {
     L140,560
     L140,300 Z`;
 
+  const estimatingDimmed = activeTool === 'estimating';
+
   return (
-    <div className={styles.container}>
+    <div
+      className={styles.container}
+      onDrop={onDrop}
+      onDragOver={onDragOver}
+    >
+      {showGeometryPlanHint && (
+        <div className={styles.geometryPlanHint}>
+          Select the Estimating tool (geometry toolbar) or drop a PNG/JPG here to load a plan underlay.
+        </div>
+      )}
+      {planDropMessage && (
+        <div className={styles.planDropMessage} role="status">
+          {planDropMessage}
+        </div>
+      )}
+      {authoringMode === 'geometry' && activeTool === 'estimating' && (
+        <div className={styles.estimatingBar}>
+          <span className={styles.estimatingHint}>
+            Drop a PNG/JPG to trace. Pool outline stays the demo path in v1.
+          </span>
+          <label className={styles.estimatingFile}>
+            <input
+              type="file"
+              accept="image/png,image/jpeg,image/webp"
+              className={styles.estimatingFileInput}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) loadImageFile(f);
+                e.target.value = '';
+              }}
+            />
+            Load image
+          </label>
+          {underlay && (
+            <button
+              type="button"
+              className={styles.estimatingClear}
+              onClick={() => {
+                setPlanDropMessage(null);
+                if (planMsgTimerRef.current != null) {
+                  window.clearTimeout(planMsgTimerRef.current);
+                  planMsgTimerRef.current = null;
+                }
+                dispatch({ type: 'UPDATE_DATA', payload: { pdfUnderlay: null, estimatingMode: false } });
+              }}
+            >
+              Clear underlay
+            </button>
+          )}
+        </div>
+      )}
       <svg
         ref={svgRef}
         className={styles.svg}
         viewBox="0 0 1440 900"
         onContextMenu={handleContextMenu}
       >
+        {showUnderlay && underlay && (
+          <image
+            href={underlay.dataUrl}
+            x={0}
+            y={0}
+            width={1440}
+            height={900}
+            opacity={underlay.opacity}
+            preserveAspectRatio="xMidYMid meet"
+            style={{ pointerEvents: 'none' }}
+          />
+        )}
         {gridEnabled && (
           <g opacity={0.06}>
             {Array.from({ length: 37 }).map((_, i) => (
@@ -137,20 +283,20 @@ export function DrawingCanvas() {
         )}
 
         {show('geometry') && (
-          <g>
+          <g style={{ opacity: estimatingDimmed ? 0.92 : 1 }}>
             <path d={deckPath} className={styles.deckShape} />
             <path d={poolPath} className={styles.poolShape} />
             <path d={spaPath} className={styles.poolShape} style={{ opacity: 0.7 }} />
 
             {showDimensions && (
               <g>
-                <text x={700} y={185} textAnchor="middle" className={styles.dimLabel}>50'-0"</text>
-                <text x={345} y={430} textAnchor="middle" className={styles.dimLabel} transform="rotate(-90,345,430)">30'-0"</text>
-                <text x={580} y={590} textAnchor="middle" className={styles.dimLabelSpa}>Spa 12' × 10'</text>
-                <text x={700} y={420} textAnchor="middle" className={styles.depthLabel}>5'-0" avg</text>
-                <text x={580} y={555} textAnchor="middle" className={styles.depthLabel}>3'-6"</text>
-                <text x={700} y={260} textAnchor="middle" className={styles.dimLabelSmall}>Shallow 3'-6"</text>
-                <text x={700} y={620} textAnchor="middle" className={styles.dimLabelSmall}>Deep 6'-0"</text>
+                <text x={700} y={185} textAnchor="middle" className={styles.dimLabel}>50&apos;-0&quot;</text>
+                <text x={345} y={430} textAnchor="middle" className={styles.dimLabel} transform="rotate(-90,345,430)">30&apos;-0&quot;</text>
+                <text x={580} y={590} textAnchor="middle" className={styles.dimLabelSpa}>Spa 12&apos; × 10&apos;</text>
+                <text x={700} y={420} textAnchor="middle" className={styles.depthLabel}>5&apos;-0&quot; avg</text>
+                <text x={580} y={555} textAnchor="middle" className={styles.depthLabel}>3&apos;-6&quot;</text>
+                <text x={700} y={260} textAnchor="middle" className={styles.dimLabelSmall}>Shallow 3&apos;-6&quot;</text>
+                <text x={700} y={620} textAnchor="middle" className={styles.dimLabelSmall}>Deep 6&apos;-0&quot;</text>
               </g>
             )}
 
@@ -165,7 +311,7 @@ export function DrawingCanvas() {
                 key={i}
                 cx={cx}
                 cy={cy}
-                r={activeTool === 'select' ? 5 : 3}
+                r={activeTool === 'select' || activeTool === 'estimating' ? 5 : 3}
                 fill="var(--accent)"
                 stroke="var(--bg-base)"
                 strokeWidth={1.5}
@@ -176,7 +322,7 @@ export function DrawingCanvas() {
         )}
 
         {show('fixtures') && (
-          <g>
+          <g style={{ pointerEvents: estimatingDimmed ? 'none' : undefined, opacity: estimatingDimmed ? 0.25 : 1 }}>
             {[[420, 200], [600, 200], [800, 200], [950, 200]].map(([cx, cy], i) => (
               <g key={`wr${i}`}>
                 <circle cx={cx} cy={cy} r={6} fill="rgba(78, 201, 176, 0.35)" stroke="#4ec9b0" strokeWidth={1} />
@@ -205,18 +351,18 @@ export function DrawingCanvas() {
         )}
 
         {show('plumbing') && (
-          <g>
+          <g style={{ opacity: estimatingDimmed ? 0.2 : 1 }}>
             <line x1={360} y1={420} x2={200} y2={420} stroke="#c586c0" strokeWidth={1} strokeDasharray="3,2" opacity={0.5} />
             <line x1={200} y1={420} x2={200} y2={340} stroke="#c586c0" strokeWidth={1} strokeDasharray="3,2" opacity={0.5} />
-            {showDimensions && <text x={280} y={412} className={styles.labelSmall}>2" suction</text>}
+            {showDimensions && <text x={280} y={412} className={styles.labelSmall}>2&quot; suction</text>}
 
             <line x1={360} y1={300} x2={200} y2={300} stroke="#b39ddb" strokeWidth={1} strokeDasharray="3,2" opacity={0.4} />
-            {showDimensions && <text x={280} y={292} className={styles.labelSmall}>2" return</text>}
+            {showDimensions && <text x={280} y={292} className={styles.labelSmall}>2&quot; return</text>}
           </g>
         )}
 
         {show('geometry') && (
-          <g>
+          <g style={{ opacity: estimatingDimmed ? 0.85 : 1 }}>
             <path d={equipPadPath} className={styles.equipShape} />
             {showDimensions && (
               <text x={200} y={288} textAnchor="middle" className={styles.equipPadLabel}>EQUIP PAD</text>

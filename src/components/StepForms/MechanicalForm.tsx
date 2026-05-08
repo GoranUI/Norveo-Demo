@@ -1,4 +1,6 @@
 import { useApp } from '../../store';
+import { flattenItems } from '../../data/projectItems';
+import type { InletStrategy } from '../../types';
 import { OptionButton } from '../ui/OptionButton';
 import { MultiSelect } from '../ui/MultiSelect';
 import styles from './forms.module.css';
@@ -8,6 +10,9 @@ export function MechanicalForm() {
   const d = state.data;
   const disabled = d.isFinalized;
   const update = (payload: Record<string, unknown>) => dispatch({ type: 'UPDATE_DATA', payload });
+  const leaves = flattenItems(state.projectItems);
+  const wallFrozen = leaves.find((i) => i.id === 'wallReturns')?.autoEngineeringFrozen;
+  const floorFrozen = leaves.find((i) => i.id === 'floorReturns')?.autoEngineeringFrozen;
 
   return (
     <div className={styles.form}>
@@ -47,6 +52,32 @@ export function MechanicalForm() {
           />
         </div>
       )}
+      <div className={styles.conditional}>
+        <OptionButton
+          label="Inlet placement (returns)"
+          options={[
+            { value: 'wall-only', label: 'Wall only' },
+            { value: 'auto-shelf', label: 'Auto on shelves' },
+            { value: 'floor-only', label: 'Floor only' },
+          ]}
+          value={d.inletStrategy}
+          onChange={(v) => update({ inletStrategy: v as InletStrategy })}
+          disabled={disabled}
+        />
+        <p className={styles.formDesc} style={{ marginTop: '8px', marginBottom: 0 }}>
+          Drives wall vs floor return counts from design GPM and pool sections (shallow shelf share).
+        </p>
+        {(wallFrozen || floorFrozen) && (
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            disabled={disabled}
+            onClick={() => dispatch({ type: 'RESYNC_INLET_COUNTS' })}
+          >
+            Re-apply auto inlet counts
+          </button>
+        )}
+      </div>
     </div>
   );
 }

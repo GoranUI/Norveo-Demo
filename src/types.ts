@@ -6,6 +6,7 @@ export type Workspace =
   | 'engineering'
   | 'design'
   | 'bom'
+  | 'catalog'
   | 'estimate'
   | 'deliverables'
   | 'history'
@@ -34,6 +35,17 @@ export type ItemStatus = 'purchased' | 'to-purchase' | 'on-order' | 'not-require
 
 export type ItemInteraction = 'movable' | 'shapeable';
 
+/** Wall vs floor return strategy for recirculation (Mechanical + inlet planner). */
+export type InletStrategy = 'wall-only' | 'auto-shelf' | 'floor-only';
+
+/** Image underlay for estimating mode (PNG/JPG data URL for v1). */
+export interface PdfUnderlayState {
+  dataUrl: string;
+  widthIn: number;
+  heightIn: number;
+  opacity: number;
+}
+
 export interface ProjectItem {
   id: string;
   name: string;
@@ -44,6 +56,20 @@ export interface ProjectItem {
   price: number;
   /** Dollar markup added per unit on top of `price`. Defaults to 0 if absent. */
   markup?: number;
+  /** Estimate workspace: budget line total (null = not set). */
+  budgetCost?: number | null;
+  /** When true, auto inlet sync leaves `qty` unchanged for this row. */
+  autoEngineeringFrozen?: boolean;
+  /** Set when line was created from the company catalog. */
+  catalogTemplateId?: string;
+  /** Catalog row version at insert time (for stale detection). */
+  catalogTemplateVersion?: number;
+  /** Per-unit labor $ (from catalog template) for estimate breakdown. */
+  catalogLaborUnit?: number;
+  /** Per-unit equipment $ (from catalog template). */
+  catalogEquipUnit?: number;
+  /** Per-unit material $ (from catalog template). */
+  catalogMatUnit?: number;
   visible: boolean;
   partNo: string;
   brand: string;
@@ -207,10 +233,20 @@ export interface ProjectData {
   designSuctionFps: number | null;
   /** Design return velocity target (ft/s). Null = use default (8). */
   designReturnFps: number | null;
+  /** Inlet / return fitting strategy (BOM wall vs floor counts). Default auto-shelf. */
+  inletStrategy: InletStrategy;
+  /** First day of expected build month (ISO `YYYY-MM-DD`). Drives inflation hint only. */
+  expectedBuildDate: string | null;
+  /** Optional plan image under design canvas (estimating tool). */
+  pdfUnderlay: PdfUnderlayState | null;
+  /** When true, Estimate admin has opted into estimating-mode affordances (toolbar). */
+  estimatingMode: boolean;
+  /** Internal estimate lifecycle vs procurement (Orders). */
+  estimateStatus: 'draft' | 'submitted' | 'approved';
 }
 
 // ── User mode ──
-export type UserMode = 'engineer' | 'sales';
+export type UserMode = 'engineer' | 'sales' | 'companyAdmin';
 
 // ── UI theme ──
 export type Theme = 'dark' | 'light';
@@ -255,6 +291,8 @@ export interface AppState {
   activityLog: import('./data/projectHistory').ActivityEvent[];
   /** Cross-workspace handoff: Files/Browse reads this to auto-select a file. */
   selectedFileId: string | null;
+  /** Company-wide reusable estimate / BOM line templates (localStorage). */
+  companyCatalogTemplates: import('./data/companyCatalog').CompanyLineTemplate[];
 }
 
 // ── Actions ──
@@ -292,9 +330,26 @@ export type AppAction =
   | { type: 'SAVE_AS_TEMPLATE'; name: string }
   | { type: 'DELETE_USER_TEMPLATE'; id: string }
   | { type: 'UPDATE_PROJECT_ITEM'; id: string; patch: Partial<ProjectItem> }
+  /** Clear inlet auto-freeze and re-apply `planInlets` qty on wall/floor return rows. */
+  | { type: 'RESYNC_INLET_COUNTS' }
+  /** Set each leaf line's `budgetCost` from current extended cost (qty × (price + markup)). */
+  | { type: 'SET_ALL_BUDGETS_FROM_ACTUAL' }
   | { type: 'TOGGLE_ALL_ITEMS_VISIBILITY'; visible: boolean }
   | { type: 'SELECT_FILE'; fileId: string | null }
   | { type: 'SET_FILES_VIEW'; view: FilesView }
+  | {
+      type: 'ADD_PROJECT_FILES';
+      items: Array<{
+        folderId: import('./data/projectHistory').FolderId;
+        filename: string;
+        mimeType: string;
+        sizeBytes: number;
+      }>;
+    }
+  | { type: 'SET_COMPANY_CATALOG'; templates: import('./data/companyCatalog').CompanyLineTemplate[] }
+  | { type: 'ADD_CATALOG_LINES_TO_PROJECT'; templateIds: string[] }
+  | { type: 'PUBLISH_CATALOG_TEMPLATE'; id: string }
+  | { type: 'REFRESH_CATALOG_LINE'; id: string }
   | { type: 'SAVE_PROJECT' }
   | {
       type: 'OPEN_PROJECT';
@@ -634,6 +689,8 @@ export const TOOLS_BY_MODE: Record<AuthoringMode, ToolDef[]> = {
     { id: 'addSegment', label: 'Add Segment', shortcut: 'L', icon: 'Minus' },
     { id: 'offset', label: 'Offset', shortcut: 'O', icon: 'CopyPlus' },
     { id: 'measure', label: 'Measure', shortcut: 'M', icon: 'Ruler' },
+    { id: 'divider2', label: '', icon: '' },
+    { id: 'estimating', label: 'Estimating', icon: 'Image' },
   ],
   architecture: [
     { id: 'select', label: 'Select', shortcut: 'V', icon: 'MousePointer2' },
@@ -701,6 +758,7 @@ export const WORKSPACE_LABELS: Record<Workspace, string> = {
   engineering: 'Engineering',
   design: 'Design',
   bom: 'Procurement',
+  catalog: 'Company catalog',
   estimate: 'Estimate',
   deliverables: 'Deliverables',
   history: 'History',

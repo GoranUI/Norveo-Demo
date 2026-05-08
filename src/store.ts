@@ -4,10 +4,18 @@ import { FILTER_CATALOG } from './data/equipmentCatalog';
 import { DEFAULT_PROJECT_ITEMS, cloneProjectItems } from './data/projectItems';
 import { SEED_FILES, SEED_ACTIVITY } from './data/projectHistory';
 import type { ProjectFile, ActivityEvent } from './data/projectHistory';
+import {
+  loadCompanyCatalogFromStorage,
+  persistCompanyCatalog,
+  expandCatalogTemplatesForInsert,
+  projectItemFromCatalogWithMultiplier,
+} from './data/companyCatalog';
 import { DEFAULT_POOL_SECTIONS, makeEmptyPoolSection } from './data/poolSections';
+import { computeDesignGpm } from './data/designGpm';
+import { planInlets } from './data/inletPlanning';
 import { getRecirculationLabels } from './data/recirculationOptions';
 import { STEP_DEFINITIONS } from './types';
-import type { AppState, AppAction, ProjectData, ProjectItem } from './types';
+import type { AppState, AppAction, ProjectData, ProjectItem, InletStrategy } from './types';
 import type { ProjectTemplate } from './data/projectTemplates';
 
 function updateItemInTree(items: ProjectItem[], id: string, patch: Partial<ProjectItem>): ProjectItem[] {
@@ -17,6 +25,49 @@ function updateItemInTree(items: ProjectItem[], id: string, patch: Partial<Proje
       return { ...item, children: updateItemInTree(item.children, id, patch) };
     }
     return item;
+  });
+}
+
+function findItemById(items: ProjectItem[], id: string): ProjectItem | null {
+  for (const item of items) {
+    if (item.id === id) return item;
+    if (item.children?.length) {
+      const inner = findItemById(item.children, id);
+      if (inner) return inner;
+    }
+  }
+  return null;
+}
+
+/** Wall / floor return counts from `planInlets`, respecting per-row freeze. */
+function syncInletBomLine(
+  items: ProjectItem[],
+  data: ProjectData,
+  engineeringFlowAddGpm: number | null,
+): ProjectItem[] {
+  const { designGpm } = computeDesignGpm(data, engineeringFlowAddGpm);
+  const strategy: InletStrategy = data.inletStrategy ?? 'auto-shelf';
+  const plan = planInlets(data.poolSections, strategy, designGpm);
+  let next = items;
+  const wall = findItemById(next, 'wallReturns');
+  const floor = findItemById(next, 'floorReturns');
+  if (wall && !wall.autoEngineeringFrozen) {
+    next = updateItemInTree(next, 'wallReturns', { qty: plan.wallReturns });
+  }
+  if (floor && !floor.autoEngineeringFrozen) {
+    next = updateItemInTree(next, 'floorReturns', { qty: plan.floorReturns });
+  }
+  return next;
+}
+
+function seedBudgetCostsFromActual(items: ProjectItem[]): ProjectItem[] {
+  return items.map((item) => {
+    if (item.children?.length) {
+      return { ...item, children: seedBudgetCostsFromActual(item.children) };
+    }
+    if (!item.partNo) return item;
+    const budgetCost = item.qty * (item.price + (item.markup ?? 0));
+    return { ...item, budgetCost };
   });
 }
 
@@ -173,6 +224,11 @@ export const DEFAULT_DATA: ProjectData = {
   turnoverHoursOverride: null,
   designSuctionFps: null,
   designReturnFps: null,
+  inletStrategy: 'auto-shelf',
+  expectedBuildDate: null,
+  pdfUnderlay: null,
+  estimatingMode: false,
+  estimateStatus: 'draft',
 };
 
 function createBlankProjectData(): ProjectData {
@@ -249,6 +305,11 @@ function createBlankProjectData(): ProjectData {
     turnoverHoursOverride: null,
     designSuctionFps: null,
     designReturnFps: null,
+    inletStrategy: 'auto-shelf',
+    expectedBuildDate: null,
+    pdfUnderlay: null,
+    estimatingMode: false,
+    estimateStatus: 'draft',
   };
 }
 
@@ -274,6 +335,14 @@ function createProjectData(preset: LegacyPreset = {}): ProjectData {
       ...(normalizedPreset.brandPreferences ?? {}),
     },
     isFinalized: normalizedPreset.isFinalized ?? false,
+    inletStrategy: (normalizedPreset as Partial<ProjectData>).inletStrategy ?? blank.inletStrategy,
+    expectedBuildDate:
+      (normalizedPreset as Partial<ProjectData>).expectedBuildDate ?? blank.expectedBuildDate,
+    pdfUnderlay: (normalizedPreset as Partial<ProjectData>).pdfUnderlay ?? blank.pdfUnderlay,
+    estimatingMode:
+      (normalizedPreset as Partial<ProjectData>).estimatingMode ?? blank.estimatingMode,
+    estimateStatus:
+      (normalizedPreset as Partial<ProjectData>).estimateStatus ?? blank.estimateStatus,
   };
 }
 
@@ -307,6 +376,44 @@ function persistUserTemplates(templates: ProjectTemplate[]) {
   } catch { /* ignore */ }
 }
 
+const COMPANY_CATALOG_GROUP_ID = 'companyCatalogLines';
+
+function ensureCompanyCatalogGroup(items: ProjectItem[]): ProjectItem[] {
+  if (items.some((i) => i.id === COMPANY_CATALOG_GROUP_ID)) return items;
+  return [
+    ...items,
+    {
+      id: COMPANY_CATALOG_GROUP_ID,
+      name: 'Company catalog',
+      category: 'Company',
+      color: '#7e57c2',
+      qty: 0,
+      unit: '',
+      price: 0,
+      visible: true,
+      partNo: '',
+      brand: '',
+      description: 'Lines added from the company catalog',
+      supplier: '',
+      status: 'to-purchase' as const,
+      interaction: 'movable' as const,
+      children: [],
+    },
+  ];
+}
+
+function appendChildrenToGroup(items: ProjectItem[], groupId: string, newLeaves: ProjectItem[]): ProjectItem[] {
+  return items.map((node) => {
+    if (node.id === groupId) {
+      return { ...node, children: [...(node.children ?? []), ...newLeaves] };
+    }
+    if (node.children?.length) {
+      return { ...node, children: appendChildrenToGroup(node.children, groupId, newLeaves) };
+    }
+    return node;
+  });
+}
+
 export const INITIAL_STATE: AppState = {
   activeWorkspace: 'configurator',
   activeStep: null,
@@ -326,12 +433,13 @@ export const INITIAL_STATE: AppState = {
   wizardPhase: 'landing',
   isDirty: false,
   appliedTemplatePreset: null,
-  projectItems: cloneProjectItems(DEFAULT_PROJECT_ITEMS),
+  projectItems: syncInletBomLine(cloneProjectItems(DEFAULT_PROJECT_ITEMS), DEFAULT_DATA, null),
   userTemplates: getStoredUserTemplates(),
   filesView: 'browse',
   projectFiles: [...SEED_FILES],
   activityLog: [...SEED_ACTIVITY],
   selectedFileId: null,
+  companyCatalogTemplates: loadCompanyCatalogFromStorage(),
 };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
@@ -354,6 +462,107 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         filesView: action.fileId !== null ? 'browse' : state.filesView,
         selectedFileId: action.fileId,
       };
+    case 'ADD_PROJECT_FILES': {
+      const now = new Date().toISOString();
+      const added: ProjectFile[] = action.items.map((it, i) => ({
+        id: `f-up-${Date.now()}-${i}`,
+        folderId: it.folderId,
+        filename: it.filename,
+        mimeType: it.mimeType,
+        sizeBytes: it.sizeBytes,
+        version: 'upload',
+        savedBy: 'jordan',
+        savedAt: now,
+        notes: 'Uploaded (demo: metadata only; file is not stored on a server).',
+      }));
+      return {
+        ...state,
+        projectFiles: [...added, ...state.projectFiles],
+        isDirty: true,
+      };
+    }
+    case 'SET_COMPANY_CATALOG': {
+      persistCompanyCatalog(action.templates);
+      return { ...state, companyCatalogTemplates: action.templates };
+    }
+    case 'ADD_CATALOG_LINES_TO_PROJECT': {
+      if (state.data.isFinalized) return state;
+      const expanded = expandCatalogTemplatesForInsert(
+        action.templateIds,
+        state.companyCatalogTemplates,
+      );
+      if (expanded.length === 0) return state;
+      const newLeaves = expanded.map(({ template, assemblyMultiplier }) =>
+        projectItemFromCatalogWithMultiplier(
+          template,
+          state.data,
+          state.projectItems,
+          assemblyMultiplier,
+        ),
+      );
+      let nextItems = ensureCompanyCatalogGroup(state.projectItems);
+      nextItems = appendChildrenToGroup(nextItems, COMPANY_CATALOG_GROUP_ID, newLeaves);
+      return { ...state, projectItems: nextItems, isDirty: true };
+    }
+    case 'PUBLISH_CATALOG_TEMPLATE': {
+      if (state.userMode !== 'companyAdmin') return state;
+      const now = new Date().toISOString();
+      let detail = '';
+      let ver = 0;
+      const next = state.companyCatalogTemplates.map((t) => {
+        if (t.id !== action.id) return t;
+        ver = (t.version ?? 0) + 1;
+        detail = t.name;
+        return { ...t, status: 'active' as const, version: ver, lastPublishedAt: now };
+      });
+      persistCompanyCatalog(next);
+      const newEvent: ActivityEvent = {
+        id: `a-cat-${Date.now()}`,
+        kind: 'catalog',
+        authorId: 'jordan',
+        at: now,
+        title: `Published company catalog line v${ver}`,
+        detail,
+        target: action.id,
+      };
+      return {
+        ...state,
+        companyCatalogTemplates: next,
+        activityLog: [newEvent, ...state.activityLog],
+      };
+    }
+    case 'REFRESH_CATALOG_LINE': {
+      if (state.data.isFinalized) return state;
+      const item = findItemById(state.projectItems, action.id);
+      if (!item?.catalogTemplateId) return state;
+      const tpl = state.companyCatalogTemplates.find((x) => x.id === item.catalogTemplateId);
+      if (!tpl || tpl.status !== 'active' || tpl.kind === 'assembly') return state;
+      const fresh = projectItemFromCatalogWithMultiplier(
+        tpl,
+        state.data,
+        state.projectItems,
+        1,
+        action.id,
+      );
+      return {
+        ...state,
+        projectItems: updateItemInTree(state.projectItems, action.id, {
+          qty: fresh.qty,
+          unit: fresh.unit,
+          price: fresh.price,
+          markup: fresh.markup,
+          name: fresh.name,
+          description: fresh.description,
+          category: fresh.category,
+          partNo: fresh.partNo,
+          catalogTemplateVersion: fresh.catalogTemplateVersion,
+          catalogLaborUnit: fresh.catalogLaborUnit,
+          catalogEquipUnit: fresh.catalogEquipUnit,
+          catalogMatUnit: fresh.catalogMatUnit,
+        }),
+        isDirty: true,
+      };
+    }
     case 'SAVE_PROJECT': {
       const slug = (state.data.projectName || 'project')
         .toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
@@ -394,7 +603,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     }
     case 'SET_STEP':
       return { ...state, activeStep: action.step };
-    case 'START_NEW_PROJECT':
+    case 'START_NEW_PROJECT': {
+      const blank = createBlankProjectData();
       return {
         ...state,
         wizardPhase: 'template',
@@ -403,14 +613,15 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         configDrawerOpen: false,
         appliedTemplatePreset: null,
         engineeringFlowAddGpm: null,
-        data: createBlankProjectData(),
-        projectItems: cloneProjectItems(DEFAULT_PROJECT_ITEMS),
+        data: blank,
+        projectItems: syncInletBomLine(cloneProjectItems(DEFAULT_PROJECT_ITEMS), blank, null),
         projectFiles: [],
         activityLog: [],
         selectedFileId: null,
         filesView: 'browse',
         isDirty: false,
       };
+    }
     case 'START_CHAT':
       return {
         ...state,
@@ -477,7 +688,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       const nextData = { ...state.data, ...action.payload };
       const shouldSyncFilter =
         'filtrationType' in action.payload || 'selectedFilterModelId' in action.payload;
-      const nextItems = shouldSyncFilter ? syncFilterBomLine(state.projectItems, nextData) : state.projectItems;
+      let nextItems = shouldSyncFilter ? syncFilterBomLine(state.projectItems, nextData) : state.projectItems;
+      nextItems = syncInletBomLine(nextItems, nextData, state.engineeringFlowAddGpm);
       return {
         ...state,
         data: nextData,
@@ -507,11 +719,38 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, theme: action.theme };
     case 'SET_ENGINEERING_FLOW_ADD_GPM':
       if (state.data.isFinalized) return state;
-      return { ...state, engineeringFlowAddGpm: action.gpm };
-    case 'UPDATE_PROJECT_ITEM':
       return {
         ...state,
-        projectItems: updateItemInTree(state.projectItems, action.id, action.patch),
+        engineeringFlowAddGpm: action.gpm,
+        projectItems: syncInletBomLine(state.projectItems, state.data, action.gpm),
+      };
+    case 'UPDATE_PROJECT_ITEM': {
+      let { patch } = action;
+      if (
+        (action.id === 'wallReturns' || action.id === 'floorReturns') &&
+        patch.qty !== undefined
+      ) {
+        patch = { ...patch, autoEngineeringFrozen: true };
+      }
+      return {
+        ...state,
+        projectItems: updateItemInTree(state.projectItems, action.id, patch),
+        isDirty: true,
+      };
+    }
+    case 'RESYNC_INLET_COUNTS': {
+      if (state.data.isFinalized) return state;
+      let items = state.projectItems;
+      items = updateItemInTree(items, 'wallReturns', { autoEngineeringFrozen: false });
+      items = updateItemInTree(items, 'floorReturns', { autoEngineeringFrozen: false });
+      items = syncInletBomLine(items, state.data, state.engineeringFlowAddGpm);
+      return { ...state, projectItems: items, isDirty: true };
+    }
+    case 'SET_ALL_BUDGETS_FROM_ACTUAL':
+      return {
+        ...state,
+        projectItems: seedBudgetCostsFromActual(state.projectItems),
+        isDirty: true,
       };
     case 'TOGGLE_ALL_ITEMS_VISIBILITY':
       return {
@@ -539,12 +778,14 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       }
       const visibleSteps = STEP_DEFINITIONS.filter((s) => s.isVisible(merged));
       const firstStep = visibleSteps.find((s) => !s.isComplete(merged)) ?? visibleSteps[0] ?? STEP_DEFINITIONS[0];
+      const templatedItems = syncInletBomLine(state.projectItems, merged, state.engineeringFlowAddGpm);
 
       return {
         ...state,
         wizardPhase: 'wizard',
         appliedTemplatePreset: { ...preset },
         data: merged,
+        projectItems: templatedItems,
         configDrawerOpen: false,
         activeStep: firstStep.id,
       };
@@ -586,12 +827,17 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'OPEN_PROJECT': {
       const { profile } = action;
       const merged = createProjectData(profile.preset);
+      const openedItems = syncInletBomLine(
+        cloneProjectItems(profile.projectItems),
+        merged,
+        profile.engineeringFlowAddGpm,
+      );
       return {
         ...state,
         wizardPhase: 'workspace',
         activeWorkspace: 'configurator',
         data: merged,
-        projectItems: cloneProjectItems(profile.projectItems),
+        projectItems: openedItems,
         projectFiles: [...profile.projectFiles],
         activityLog: [...profile.activityLog],
         engineeringFlowAddGpm: profile.engineeringFlowAddGpm,

@@ -1,5 +1,6 @@
 import type { ProjectItem } from '../types';
 
+/** Seed qty values; live counts come from `planInlets` + store `syncInletBomLine`. */
 const RAW_DEFAULT_PROJECT_ITEMS: ProjectItem[] = [
   {
     id: 'shell',
