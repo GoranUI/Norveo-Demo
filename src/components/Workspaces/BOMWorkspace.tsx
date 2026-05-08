@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useRef, type ReactNode } from 'react';
 import {
   FileDown, ShoppingCart, Search, ChevronDown, ChevronRight, ExternalLink, SquarePen,
-  DollarSign, Save, SlidersHorizontal, Check,
+  DollarSign, Save, SlidersHorizontal, Check, Library, RefreshCw, X,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { flattenItems } from '../../data/projectItems';
@@ -20,6 +20,8 @@ import styles from './bom.module.css';
 interface BOMRow extends BOMLineRef {
   id: string;
   markup: number;
+  hasCatalog?: boolean;
+  catalogStale?: boolean;
 }
 
 function projectItemToBOM(item: ProjectItem): BOMRow {
@@ -53,8 +55,9 @@ function rowToLineRef(row: BOMRow): BOMLineRef {
 }
 
 import { computeSwapPatch } from '../../data/projectItemSwap';
+import { isCatalogLineStale } from '../../data/companyCatalog';
 
-const CATEGORIES = ['Structural', 'Mechanical', 'Plumbing', 'Fixtures', 'Finishes'];
+const CATEGORIES = ['Structural', 'Mechanical', 'Plumbing', 'Fixtures', 'Finishes', 'Company catalog'];
 const STATUS_ORDER: ItemStatus[] = ['to-purchase', 'on-order', 'purchased', 'not-required'];
 const STATUS_OPTIONS = STATUS_ORDER.map((status) => ({
   value: status,
@@ -69,9 +72,19 @@ type BomView = 'parts' | 'estimate' | 'order';
 type EstimateView = 'admin' | 'customer';
 type MarkupMode = 'separate' | 'included';
 
+const BANNER_DISMISS_KEY = 'norveo-bom-workflow-dismissed';
+
 export function BOMWorkspace() {
   const { state, dispatch } = useApp();
+  const procurementReady = state.data.estimateStatus === 'approved';
   const [activeView, setActiveView] = useState<BomView>('parts');
+  const [bannerDismissed, setBannerDismissed] = useState(() => {
+    try {
+      return sessionStorage.getItem(BANNER_DISMISS_KEY) === '1';
+    } catch {
+      return false;
+    }
+  });
   const [search, setSearch] = useState('');
   const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
 
@@ -98,9 +111,15 @@ export function BOMWorkspace() {
     });
   };
 
+  const leafItems = useMemo(() => flattenItems(state.projectItems), [state.projectItems]);
   const rows = useMemo(
-    () => flattenItems(state.projectItems).map(projectItemToBOM),
-    [state.projectItems],
+    () =>
+      leafItems.map((item) => ({
+        ...projectItemToBOM(item),
+        hasCatalog: Boolean(item.catalogTemplateId),
+        catalogStale: isCatalogLineStale(item, state.companyCatalogTemplates),
+      })),
+    [leafItems, state.companyCatalogTemplates],
   );
 
   const suppliers = useMemo(() => {
@@ -201,17 +220,59 @@ export function BOMWorkspace() {
   /* ── View tabs (shared across all views, hosted inside the top bar) ── */
   const viewTabs = (
     <div className={styles.viewTabs}>
-      {(['parts', 'estimate', 'order'] as BomView[]).map((v) => (
-        <button
-          key={v}
-          className={`${styles.viewTab} ${activeView === v ? styles.viewTabActive : ''}`}
-          onClick={() => setActiveView(v)}
-        >
-          {v === 'parts' ? 'Parts' : v === 'estimate' ? 'Estimate' : 'Orders'}
-        </button>
-      ))}
+      {(['parts', 'estimate', 'order'] as BomView[]).map((v) => {
+        const orderNeedsApproval = v === 'order' && !procurementReady;
+        return (
+          <button
+            key={v}
+            type="button"
+            title={
+              orderNeedsApproval
+                ? 'Orders opens here; procurement lists unlock after you mark the estimate ready.'
+                : undefined
+            }
+            className={`${styles.viewTab} ${activeView === v ? styles.viewTabActive : ''} ${orderNeedsApproval ? styles.viewTabAttention : ''}`}
+            onClick={() => setActiveView(v)}
+          >
+            {v === 'parts' ? 'Parts' : v === 'estimate' ? 'Estimate' : 'Orders'}
+          </button>
+        );
+      })}
     </div>
   );
+
+  const dismissWorkflowBanner = () => {
+    try {
+      sessionStorage.setItem(BANNER_DISMISS_KEY, '1');
+    } catch {
+      /* ignore */
+    }
+    setBannerDismissed(true);
+  };
+
+  const workflowBanner = !bannerDismissed ? (
+    <div className={styles.workflowBanner} role="note">
+      <div>
+        <strong>Estimate vs procurement.</strong>{' '}
+        <em>Estimate</em> is the internal cost build and budget; <em>Orders</em> is for committing to buy after approval.
+        <em> Parts</em> is the live BOM (engineering plus anything you add from the company catalog).
+      </div>
+      {procurementReady ? (
+        <span className={styles.workflowOk}>Procurement lists active.</span>
+      ) : (
+        <span className={styles.workflowPending}>Mark estimate ready for procurement to activate order lists.</span>
+      )}
+      <button
+        type="button"
+        className={styles.workflowDismiss}
+        onClick={dismissWorkflowBanner}
+        aria-label="Dismiss workflow note"
+        title="Dismiss until you refresh the page"
+      >
+        <X size={14} />
+      </button>
+    </div>
+  ) : null;
 
   /* ── Filter popover (closes on outside click / Escape) ── */
   const filterWrapRef = useRef<HTMLDivElement | null>(null);
@@ -317,13 +378,29 @@ export function BOMWorkspace() {
           <DollarSign size={13} />
           Markup: {markupMode === 'separate' ? 'Separate' : 'Included'}
         </button>
+        <button
+          type="button"
+          className={styles.toolBtn}
+          title="Edit reusable lines and quantity drivers"
+          onClick={() => dispatch({ type: 'SET_WORKSPACE', workspace: 'catalog' })}
+        >
+          <Library size={13} /> Company catalog
+        </button>
         <button className={styles.toolBtn}><FileDown size={13} /> Export</button>
         <button
-          className={styles.toolBtnPrimary}
-          onClick={() => setActiveView('order')}
-          title="Go to Orders — review pending items and place orders by supplier"
+          type="button"
+          className={`${styles.toolBtnPrimary} ${!procurementReady ? styles.toolBtnMuted : ''}`}
+          onClick={() => {
+            if (procurementReady) setActiveView('order');
+            else setActiveView('estimate');
+          }}
+          title={
+            procurementReady
+              ? 'Go to Orders — review pending items and place orders by supplier'
+              : 'Open Estimate — mark ready for procurement to unlock Orders'
+          }
         >
-          <ShoppingCart size={13} /> Order Parts
+          <ShoppingCart size={13} /> {procurementReady ? 'Order Parts' : 'Review estimate first'}
         </button>
       </>
     );
@@ -350,6 +427,28 @@ export function BOMWorkspace() {
           <span className={styles.adminBadge}>Cost build</span>
         ) : (
           <span className={styles.customerBadge}>Quote</span>
+        )}
+        {estimateView === 'admin' && (
+          <button
+            type="button"
+            className={styles.toolBtn}
+            title="Copy each line extended cost into budget for variance tracking"
+            onClick={() => dispatch({ type: 'SET_ALL_BUDGETS_FROM_ACTUAL' })}
+          >
+            Set budget = current cost
+          </button>
+        )}
+        {!procurementReady && (
+          <button
+            type="button"
+            className={styles.toolBtnPrimary}
+            title="Unlocks the Orders tab for procurement workflows (demo — no approval routing)."
+            onClick={() =>
+              dispatch({ type: 'UPDATE_DATA', payload: { estimateStatus: 'approved' } })
+            }
+          >
+            Mark estimate ready for procurement
+          </button>
         )}
         <button className={styles.toolBtn}><FileDown size={13} /> Export</button>
         <button className={styles.toolBtnPrimary}><Save size={13} /> Save</button>
@@ -384,6 +483,7 @@ export function BOMWorkspace() {
     return (
       <div className={styles.outer}>
         {topBar}
+        {workflowBanner}
         <EstimateWorkspace estimateView={estimateView} />
       </div>
     );
@@ -393,11 +493,25 @@ export function BOMWorkspace() {
     return (
       <div className={styles.outer}>
         {topBar}
-        <OrderSummary
-          rows={rows}
-          cheapestMode={procurementTab === 'completed' ? false : cheapestMode}
-          onActiveTabChange={setProcurementTab}
-        />
+        {workflowBanner}
+        {procurementReady ? (
+          <OrderSummary
+            rows={rows}
+            cheapestMode={procurementTab === 'completed' ? false : cheapestMode}
+            onActiveTabChange={setProcurementTab}
+          />
+        ) : (
+          <div className={styles.orderGuard}>
+            <p>
+              The estimate is not marked ready for procurement yet. Use the{' '}
+              <strong>Estimate</strong> tab and click <strong>Mark estimate ready for procurement</strong>, then return
+              to <strong>Orders</strong>.
+            </p>
+            <button type="button" className={styles.toolBtnPrimary} onClick={() => setActiveView('estimate')}>
+              Go to Estimate
+            </button>
+          </div>
+        )}
       </div>
     );
   }
@@ -415,6 +529,7 @@ export function BOMWorkspace() {
   return (
     <div className={styles.outer}>
       {topBar}
+      {workflowBanner}
 
       {/* Parts table */}
       <div className={styles.tableWrap}>
@@ -432,13 +547,14 @@ export function BOMWorkspace() {
               {showMarkupCol && <th className={styles.thMarkup}>Markup</th>}
               <th className={styles.thCost}>Ext. Cost</th>
               <th className={styles.thSupplier}>Supplier</th>
+              <th className={styles.thCatalog}>Catalog</th>
               <th className={styles.thStatus}>Status</th>
             </tr>
           </thead>
           {filtered.length === 0 && (
             <tbody>
               <tr>
-                <td colSpan={showMarkupCol ? 10 : 9} className={styles.emptyRow}>
+                <td colSpan={showMarkupCol ? 11 : 10} className={styles.emptyRow}>
                   No parts match your current filters.
                 </td>
               </tr>
@@ -460,7 +576,7 @@ export function BOMWorkspace() {
                     </div>
                   </td>
                   <td className={styles.catTotal}>{fmt(catTotal)}</td>
-                  <td colSpan={2} />
+                  <td colSpan={3} />
                 </tr>
                 {isOpen && items.map((item) => {
                   const st = BOM_STATUS_LABELS[item.status];
@@ -511,6 +627,27 @@ export function BOMWorkspace() {
                           {item.supplier}
                           <ExternalLink size={10} className={styles.supplierLink} />
                         </div>
+                      </td>
+                      <td onClick={(e) => e.stopPropagation()} className={styles.cellCatalog}>
+                        {item.hasCatalog ? (
+                          <div className={styles.catalogCellInner}>
+                            {item.catalogStale && (
+                              <span className={styles.staleDot} title="Newer catalog version available — refresh to update">
+                                ●
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              className={styles.catRefreshBtn}
+                              title="Re-resolve line from published catalog template"
+                              onClick={() => dispatch({ type: 'REFRESH_CATALOG_LINE', id: item.id })}
+                            >
+                              <RefreshCw size={12} aria-hidden />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className={styles.catalogDash}>—</span>
+                        )}
                       </td>
                       <td onClick={(e) => e.stopPropagation()}>
                         <div className={styles.statusCell}>

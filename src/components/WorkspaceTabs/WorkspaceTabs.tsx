@@ -2,7 +2,7 @@ import { useApp } from '../../store';
 import { WORKSPACE_LABELS } from '../../types';
 import type { Workspace } from '../../types';
 import {
-  SlidersHorizontal, PenTool, ClipboardList, Folder,
+  SlidersHorizontal, PenTool, ClipboardList, Folder, Library,
 } from 'lucide-react';
 import styles from './WorkspaceTabs.module.css';
 
@@ -10,6 +10,7 @@ const WORKSPACES: { id: Workspace; icon: React.FC<{ size?: number }> }[] = [
   { id: 'configurator', icon: SlidersHorizontal },
   { id: 'design', icon: PenTool },
   { id: 'bom', icon: ClipboardList },
+  { id: 'catalog', icon: Library },
   { id: 'files', icon: Folder },
 ];
 

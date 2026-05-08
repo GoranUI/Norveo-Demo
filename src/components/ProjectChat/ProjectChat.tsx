@@ -2,7 +2,9 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { Send, Sparkles, ArrowRight, Check } from 'lucide-react';
 import { useApp } from '../../store';
 import type { ProjectData } from '../../types';
+import { stripSimpleMarkdown } from '../../utils/chatDisplay';
 import { getRecirculationLabels } from '../../data/recirculationOptions';
+import { isSuperShallowPoolSection } from '../../data/poolSections';
 import styles from './ProjectChat.module.css';
 
 interface ChatMessage {
@@ -261,13 +263,34 @@ const CONVERSATION_FLOW: ConversationStep[] = [
       };
     },
   },
+  {
+    field: 'inletStrategy',
+    question:
+      'We detected a very shallow section (for example a sun shelf under 2 ft). Should circulation use **dedicated floor returns** in that zone, or **wall returns only**?',
+    options: [
+      { label: 'Dedicated floor returns', value: 'floor-only' },
+      { label: 'Wall returns only', value: 'wall-only' },
+    ],
+    skip: (data) =>
+      data.inletStrategy !== 'auto-shelf' ||
+      !data.poolSections.some((s) => isSuperShallowPoolSection(s)),
+    followUp: (value) => {
+      if (value === 'floor-only') {
+        return 'Floor returns will follow the shelf area share of design GPM. Procurement counts update automatically.';
+      }
+      if (value === 'wall-only') {
+        return 'Wall returns only — floor return count will go to zero. You can change this anytime in Mechanical.';
+      }
+      return null;
+    },
+  },
 ];
 
 const PROGRESS_SECTIONS = [
   { label: 'Basics', fields: ['projectName', 'projectType', 'poolUseType', 'projectCity'] as (keyof ProjectData)[] },
   { label: 'Codes', fields: ['localCodeAwareness'] as (keyof ProjectData)[] },
   { label: 'Design', fields: ['gutterStyle', 'copingStyle'] as (keyof ProjectData)[] },
-  { label: 'Systems', fields: ['mechanicalKnowledge', 'filtrationType', 'sanitationType', 'heatingSystem'] as (keyof ProjectData)[] },
+  { label: 'Systems', fields: ['mechanicalKnowledge', 'filtrationType', 'sanitationType', 'heatingSystem', 'inletStrategy'] as (keyof ProjectData)[] },
   { label: 'Finish', fields: ['finishType'] as (keyof ProjectData)[] },
 ];
 
@@ -330,6 +353,8 @@ function normalizeChatPayload(
       const heatingSystem = selections.includes('None') ? [] : selections;
       return { heatingSystem };
     }
+    case 'inletStrategy':
+      return { inletStrategy: value as ProjectData['inletStrategy'] };
     default:
       return { [field]: value } as Partial<ProjectData>;
   }
@@ -355,6 +380,11 @@ export function ProjectChat() {
   if (prefilledFields.current === null) {
     const set = new Set<keyof ProjectData>();
     for (const step of CONVERSATION_FLOW) {
+      if (step.skip?.(state.data)) {
+        set.add(step.field);
+        continue;
+      }
+      if (step.field === 'inletStrategy') continue;
       if (fieldHasValue(state.data, step.field)) set.add(step.field);
     }
     prefilledFields.current = set;
@@ -637,7 +667,7 @@ export function ProjectChat() {
                 </div>
               )}
               <div className={styles.bubble}>
-                <p className={styles.bubbleText}>{msg.text}</p>
+                <p className={styles.bubbleText}>{stripSimpleMarkdown(msg.text)}</p>
                 {msg.role === 'assistant' && msg.options && msg.options.length > 0 && (
                   <div className={`${styles.options} ${msg.multiSelect ? styles.optionsMulti : ''}`}>
                     {msg.options.map((opt) => {

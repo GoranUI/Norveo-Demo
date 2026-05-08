@@ -219,7 +219,8 @@ export type ActivityKind =
   | 'estimate'
   | 'team'
   | 'comment'
-  | 'export';
+  | 'export'
+  | 'catalog';
 
 export interface ActivityEvent {
   id: string;

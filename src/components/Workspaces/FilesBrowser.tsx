@@ -11,6 +11,7 @@ import {
   FileJson2,
   FileType,
   Trash2,
+  Upload,
 } from 'lucide-react';
 import {
   FOLDERS, getMember, formatBytes, fileTypeLabel, getFolderDef,
@@ -74,6 +75,7 @@ export function FilesBrowser({
   const [activeFolderId, setActiveFolderId] = useState<FolderId>('plan-sets');
   const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
   const listRef = useRef<HTMLTableSectionElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const handoffRef = useRef<string | null>(state.selectedFileId);
 
   /* Cross-workspace handoff: another workspace dispatched SELECT_FILE. */
@@ -192,6 +194,41 @@ export function FilesBrowser({
 
         {/* Right: file table + detail */}
         <div className={styles.rightPane}>
+          <div className={styles.folderToolbar}>
+            <div className={styles.folderToolbarText}>
+              <span className={styles.folderToolbarTitle}>{folderDef.label}</span>
+              <span className={styles.folderToolbarHint}>
+                Upload adds file metadata to this folder (demo — binary not stored).
+              </span>
+            </div>
+            <button
+              type="button"
+              className={styles.uploadBtn}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload size={14} aria-hidden />
+              Upload
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              className={styles.hiddenFileInput}
+              multiple
+              onChange={(e) => {
+                const input = e.target;
+                const list = input.files;
+                if (!list?.length) return;
+                const items = Array.from(list).map((file) => ({
+                  folderId: activeFolderId,
+                  filename: file.name,
+                  mimeType: file.type || 'application/octet-stream',
+                  sizeBytes: file.size,
+                }));
+                dispatch({ type: 'ADD_PROJECT_FILES', items });
+                input.value = '';
+              }}
+            />
+          </div>
           <div className={styles.tableWrap}>
             <table className={styles.fileTable}>
               <thead>
@@ -214,7 +251,7 @@ export function FilesBrowser({
                           {search.trim()
                             ? `No files matching "${search}"`
                             : activeFolderId === 'plan-sets'
-                              ? 'No files yet. Hit Save to create one.'
+                              ? 'No files yet. Use Save for a plan snapshot, or Upload for owner / third-party docs.'
                               : folderDef.description}
                         </span>
                       </div>

@@ -48,6 +48,93 @@
   border-bottom-color: var(--accent);
 }
 
+.viewTabAttention {
+  border-bottom-color: color-mix(in srgb, var(--text-muted) 50%, transparent);
+}
+
+.workflowBanner {
+  flex-shrink: 0;
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  padding-right: 36px;
+  font-size: var(--fs-xs);
+  line-height: 1.45;
+  color: var(--text-muted);
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-panel));
+  border-bottom: 1px solid var(--border);
+}
+
+.workflowDismiss {
+  position: absolute;
+  top: var(--sp-2);
+  right: var(--sp-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.workflowDismiss:hover {
+  background: var(--bg-hover);
+  color: var(--text);
+}
+
+.workflowBanner strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.workflowBanner em {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.workflowOk {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.workflowPending {
+  flex-shrink: 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+.orderGuard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--sp-4);
+  padding: var(--sp-6) var(--sp-5);
+  font-size: var(--fs-sm);
+  color: var(--text-muted);
+  max-width: 520px;
+}
+
+.orderGuard p {
+  margin: 0;
+  line-height: 1.5;
+}
+
 .topBarRight {
   display: flex;
   align-items: center;
@@ -120,6 +207,10 @@
 
 .toolBtnPrimary:hover {
   background: rgba(74, 158, 255, 0.2);
+}
+
+.toolBtnMuted {
+  opacity: 0.85;
 }
 
 /* ── Estimate view: Admin / Customer segmented toggle ── */
@@ -359,6 +450,48 @@
 .thUnit { width: 44px; text-align: center; }
 .thCost { width: 90px; text-align: right; }
 .thSupplier { width: 120px; }
+.thCatalog { width: 72px; text-align: center; }
+
+.cellCatalog {
+  text-align: center;
+  vertical-align: middle;
+}
+
+.catalogCellInner {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.catalogDash {
+  color: var(--text-muted);
+  opacity: 0.5;
+}
+
+.staleDot {
+  color: #f97316;
+  font-size: 10px;
+  line-height: 1;
+  cursor: help;
+}
+
+.catRefreshBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 4px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.catRefreshBtn:hover {
+  background: var(--bg-hover);
+  color: var(--accent);
+}
 .thStatus { width: 110px; }
 
 /* ── Category row ── */

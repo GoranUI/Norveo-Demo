@@ -11,6 +11,7 @@ import { DeliverablesWorkspace } from './components/Workspaces/DeliverablesWorks
 import { HistoryWorkspace } from './components/Workspaces/HistoryWorkspace';
 import { SummaryWorkspace } from './components/Workspaces/SummaryWorkspace';
 import { FilesWorkspace } from './components/Workspaces/FilesWorkspace';
+import { CatalogWorkspace } from './components/Workspaces/CatalogWorkspace';
 import { PlaceholderWorkspace } from './components/Workspaces/PlaceholderWorkspace';
 import { WorkspaceLanding } from './components/WorkspaceLanding/WorkspaceLanding';
 import { ProjectsLanding } from './components/ProjectsLanding/ProjectsLanding';
@@ -29,6 +30,7 @@ const VALID_WORKSPACES = new Set<string>([
   'engineering',
   'design',
   'bom',
+  'catalog',
   'estimate',
   'deliverables',
   'history',
@@ -113,6 +115,8 @@ export default function App({ initialWorkspace, initialProjectId }: { initialWor
         );
       case 'bom':
         return <BOMWorkspace />;
+      case 'catalog':
+        return <CatalogWorkspace />;
       case 'estimate':
         return <EstimateWorkspace estimateView="admin" />;
       case 'deliverables':

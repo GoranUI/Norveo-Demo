@@ -13,6 +13,7 @@ import {
   velocityFromGpmAndIdIn,
 } from '../../data/hydraulicsHead';
 import { calculateVolumeTotals } from '../../data/poolSections';
+import { planInlets } from '../../data/inletPlanning';
 import {
   calculateHeaterSizing,
   compareHeaterSizes,
@@ -311,10 +312,11 @@ export function EngineeringWorkspace() {
 
   const skimmerCount = 2;
   const mainDrainCount = 2;
-  const wallReturnCount = 4;
-  const floorReturnCount = 2;
+  const inletPlan = planInlets(d.poolSections, d.inletStrategy ?? 'auto-shelf', designGpm);
+  const wallReturnCount = inletPlan.wallReturns;
+  const floorReturnCount = inletPlan.floorReturns;
   const totalSuctionOutlets = skimmerCount + mainDrainCount;
-  const totalReturnOutlets = wallReturnCount + floorReturnCount;
+  const totalReturnOutlets = Math.max(1, wallReturnCount + floorReturnCount);
   const gpmPerSkimmer = Math.round((designGpm * 0.5) / skimmerCount);
   const gpmPerMainDrain = Math.round((designGpm * 0.5) / mainDrainCount);
 

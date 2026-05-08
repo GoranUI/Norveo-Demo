@@ -1,6 +1,8 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '../../store';
+import type { ProjectItem } from '../../types';
 import { flattenItems } from '../../data/projectItems';
+import { inflationHintPctTotal, monthsFromToday } from '../../data/inflationHints';
 import styles from './estimate.module.css';
 
 type BudgetTab = 'budget' | 'breakdown';
@@ -136,10 +138,11 @@ interface EstimateWorkspaceProps {
 }
 
 export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const [activeTab, setActiveTab] = useState<BudgetTab>('budget');
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [formulaText, setFormulaText] = useState('Select a cell to view formula');
+  const [budgetRowErrors, setBudgetRowErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -156,9 +159,72 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
 
   const visibleCols = useMemo(() => columnsForView(estimateView), [estimateView]);
 
+  const leaves = useMemo(() => flattenItems(state.projectItems), [state.projectItems]);
+
   const materialBasis = useMemo(() => {
-    return flattenItems(state.projectItems).reduce((sum, item) => sum + item.qty * (item.price + (item.markup ?? 0)), 0);
-  }, [state.projectItems]);
+    return leaves.reduce((sum, item) => sum + item.qty * (item.price + (item.markup ?? 0)), 0);
+  }, [leaves]);
+
+  const budgetTotals = useMemo(() => {
+    let budget = 0;
+    for (const item of leaves) {
+      if (item.budgetCost != null && Number.isFinite(item.budgetCost)) budget += item.budgetCost;
+    }
+    return { budget, actual: materialBasis };
+  }, [leaves, materialBasis]);
+
+  const onBudgetBlur = useCallback(
+    (item: ProjectItem, raw: string, el: HTMLInputElement) => {
+      const trimmed = raw.trim();
+      if (trimmed === '') {
+        dispatch({ type: 'UPDATE_PROJECT_ITEM', id: item.id, patch: { budgetCost: null } });
+        setBudgetRowErrors((p) => {
+          const next = { ...p };
+          delete next[item.id];
+          return next;
+        });
+        return;
+      }
+      const n = parseFloat(raw.replace(/[^0-9.-]/g, ''));
+      if (!Number.isFinite(n) || n < 0) {
+        el.value =
+          item.budgetCost != null && Number.isFinite(item.budgetCost)
+            ? String(Math.round(item.budgetCost))
+            : '';
+        setBudgetRowErrors((p) => ({ ...p, [item.id]: 'Enter a valid amount' }));
+        return;
+      }
+      const budgetCost = Math.max(0, n);
+      dispatch({ type: 'UPDATE_PROJECT_ITEM', id: item.id, patch: { budgetCost } });
+      setBudgetRowErrors((p) => {
+        const next = { ...p };
+        delete next[item.id];
+        return next;
+      });
+    },
+    [dispatch],
+  );
+
+  const buildMonthValue = state.data.expectedBuildDate
+    ? state.data.expectedBuildDate.slice(0, 7)
+    : '';
+  const buildHintPct = inflationHintPctTotal(state.data.expectedBuildDate);
+  const buildMonths = state.data.expectedBuildDate ? monthsFromToday(state.data.expectedBuildDate) : 0;
+
+  const showLemBreakdown = useMemo(
+    () =>
+      leaves.some(
+        (i) =>
+          i.catalogLaborUnit != null || i.catalogEquipUnit != null || i.catalogMatUnit != null,
+      ),
+    [leaves],
+  );
+
+  const lemExtended = (item: ProjectItem) => ({
+    labor: item.qty * (item.catalogLaborUnit ?? 0),
+    equip: item.qty * (item.catalogEquipUnit ?? 0),
+    mat: item.qty * (item.catalogMatUnit ?? 0),
+  });
 
   const handleRowClick = (idx: number, row: DisplayRow) => {
     setSelectedRow(idx);
@@ -218,6 +284,149 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
 
   return (
     <div className={styles.outer}>
+      {estimateView === 'admin' && (
+        <div className={styles.bomBudgetWrap}>
+          <div className={styles.bomBudgetRow}>
+            <span className={styles.bomBudgetLabel}>Expected build</span>
+            <input
+              className={styles.bomBudgetMonth}
+              type="month"
+              value={buildMonthValue}
+              onChange={(e) => {
+                const v = e.target.value;
+                dispatch({
+                  type: 'UPDATE_DATA',
+                  payload: { expectedBuildDate: v ? `${v}-01` : null },
+                });
+              }}
+              aria-label="Expected first month of construction"
+            />
+            {state.data.expectedBuildDate && buildHintPct != null && buildMonths > 0 && (
+              <span className={styles.bomBudgetHint}>
+                ~+{buildHintPct}% cumulative material drift hint ({buildMonths} mo — flat rate, UI only; not applied to line totals).
+              </span>
+            )}
+          </div>
+          <table className={styles.bomBudgetTable}>
+            <thead>
+              <tr>
+                <th>Item</th>
+                <th>Qty</th>
+                {showLemBreakdown && (
+                  <>
+                    <th>Labor</th>
+                    <th>Equip</th>
+                    <th>Mat</th>
+                  </>
+                )}
+                <th>Actual</th>
+                <th>Budget</th>
+                <th>Var $</th>
+                <th>Var %</th>
+              </tr>
+            </thead>
+            <tbody>
+              {leaves.length === 0 ? (
+                <tr>
+                  <td colSpan={showLemBreakdown ? 9 : 6} className={styles.bomBudgetEmpty}>
+                    No BOM lines yet
+                  </td>
+                </tr>
+              ) : (
+                <>
+                  {leaves.map((item) => {
+                    const actual = item.qty * (item.price + (item.markup ?? 0));
+                    const bud = item.budgetCost;
+                    const varD = bud == null ? null : actual - bud;
+                    const varP = bud != null && bud > 0 && varD != null ? (varD / bud) * 100 : null;
+                    const err = budgetRowErrors[item.id];
+                    const lem = lemExtended(item);
+                    const hasLem =
+                      item.catalogLaborUnit != null ||
+                      item.catalogEquipUnit != null ||
+                      item.catalogMatUnit != null;
+                    return (
+                      <tr key={item.id}>
+                        <td>{item.description || item.name}</td>
+                        <td>{item.qty}</td>
+                        {showLemBreakdown && (
+                          <>
+                            <td>{hasLem ? fmtMoney(lem.labor) : '—'}</td>
+                            <td>{hasLem ? fmtMoney(lem.equip) : '—'}</td>
+                            <td>{hasLem ? fmtMoney(lem.mat) : '—'}</td>
+                          </>
+                        )}
+                        <td>{fmtMoney(actual)}</td>
+                        <td className={styles.bomBudgetCell} onClick={(e) => e.stopPropagation()}>
+                          <input
+                            key={`${item.id}-${item.budgetCost ?? 'x'}-${err ?? ''}`}
+                            className={styles.bomBudgetInput}
+                            type="text"
+                            inputMode="decimal"
+                            defaultValue={bud != null ? String(Math.round(bud)) : ''}
+                            placeholder="—"
+                            aria-label={`Budget for ${item.name}`}
+                            aria-invalid={err ? true : undefined}
+                            aria-describedby={err ? `budget-err-${item.id}` : undefined}
+                            onFocus={() => {
+                              setBudgetRowErrors((p) => {
+                                if (!p[item.id]) return p;
+                                const next = { ...p };
+                                delete next[item.id];
+                                return next;
+                              });
+                            }}
+                            onBlur={(e) => onBudgetBlur(item, e.target.value, e.target)}
+                          />
+                          {err ? (
+                            <span id={`budget-err-${item.id}`} className={styles.bomBudgetInputError}>
+                              {err}
+                            </span>
+                          ) : null}
+                        </td>
+                        <td>{varD == null ? '—' : fmtMoney(varD)}</td>
+                        <td>{varP == null ? '—' : `${varP >= 0 ? '+' : ''}${varP.toFixed(1)}%`}</td>
+                      </tr>
+                    );
+                  })}
+                  <tr className={styles.bomBudgetSub}>
+                    <td>Subtotal / budget subtotal</td>
+                    <td />
+                    {showLemBreakdown && (
+                      <>
+                        <td>
+                          {fmtMoney(
+                            leaves.reduce((s, it) => s + lemExtended(it).labor, 0),
+                          )}
+                        </td>
+                        <td>
+                          {fmtMoney(
+                            leaves.reduce((s, it) => s + lemExtended(it).equip, 0),
+                          )}
+                        </td>
+                        <td>
+                          {fmtMoney(
+                            leaves.reduce((s, it) => s + lemExtended(it).mat, 0),
+                          )}
+                        </td>
+                      </>
+                    )}
+                    <td>{fmtMoney(budgetTotals.actual)}</td>
+                    <td>{fmtMoney(budgetTotals.budget)}</td>
+                    <td>{fmtMoney(budgetTotals.actual - budgetTotals.budget)}</td>
+                    <td>
+                      {budgetTotals.budget > 0
+                        ? `${(((budgetTotals.actual - budgetTotals.budget) / budgetTotals.budget) * 100).toFixed(1)}%`
+                        : '—'}
+                    </td>
+                  </tr>
+                </>
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
+
       {/* Formula bar */}
       <div className={styles.formulaBar}>
         <span className={styles.fxLabel}>fx</span>

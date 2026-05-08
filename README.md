@@ -2,6 +2,13 @@
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
 
+## Norveo — estimate, build date hint, estimating canvas
+
+- **Expected build month** (`ProjectData.expectedBuildDate`): set it from **Procurement → Estimate → Admin** (month picker). The KPI bar shows a **Build** chip with a **material drift hint** (~% cumulative) from [`src/data/inflationHints.ts`](src/data/inflationHints.ts). The hint is **UI-only**; it does not change line totals.
+- **Budget vs actual**: in the same Estimate admin block, use per-line **Budget** inputs and **Set budget = current cost** in the workspace toolbar to seed budgets from current extended cost, then edit unit pricing to see variance.
+- **Estimating tool**: in **Design**, switch authoring mode to **Geometry** and choose the **Estimating** tool. Drop a **PNG/JPG** (or use **Load image**) to show a dimmed **plan underlay** behind the pool SVG; clear with **Clear underlay**. v1 keeps the demo pool path; tracing is visual only.
+- **Inlet / shelf policy & chat**: see [`docs/auto-engineering-policy.md`](docs/auto-engineering-policy.md). Wall and floor return **quantities** follow `planInlets` in [`src/data/inletPlanning.ts`](src/data/inletPlanning.ts); adjust strategy under **Configurator → Mechanical → Inlet placement**.
+
 ## Geocoding (Project Location)
 
 The configurator **Project Location** step calls OpenStreetMap **Nominatim** for address suggestions and reverse geocoding.

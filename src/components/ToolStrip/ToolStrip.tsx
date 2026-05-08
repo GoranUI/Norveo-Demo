@@ -2,6 +2,7 @@ import {
   MousePointer2, Hand, Plus, Minus, CopyPlus, Ruler, Footprints, Armchair,
   AlignVerticalSpaceAround, RectangleHorizontal, ArrowUpFromDot, CircleDot,
   Lightbulb, Filter, Route, Disc, GitBranch, Layers, ScanLine, Grid3x3, Box,
+  Image,
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { TOOLS_BY_MODE } from '../../types';
@@ -12,6 +13,7 @@ const ICON_MAP: Record<string, React.FC<{ size?: number }>> = {
   MousePointer2, Hand, Plus, Minus, CopyPlus, Ruler, Footprints, Armchair,
   AlignVerticalSpaceAround, RectangleHorizontal, ArrowUpFromDot, CircleDot,
   Lightbulb, Filter, Route, Disc, GitBranch, Layers, ScanLine, Grid3x3, Box,
+  Image,
 };
 
 export function ToolStrip() {
