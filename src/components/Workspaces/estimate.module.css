@@ -7,10 +7,83 @@
   background: var(--bg-base);
 }
 
+/* ── Procurement: Admin / Customer (moved from BOM top bar) ── */
+.estimateModeBar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-4);
+  border-bottom: 1px solid var(--border-light);
+  background: var(--bg-panel);
+}
+
+.viewSeg {
+  display: inline-flex;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  height: var(--control-h);
+}
+
+.viewSegBtn {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  padding: 0 10px;
+  border: none;
+  background: var(--bg-input);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.viewSegBtn:hover {
+  color: var(--text-primary);
+}
+
+.viewSegBtn + .viewSegBtn {
+  border-left: 1px solid var(--border);
+}
+
+.viewSegBtnActive {
+  background: rgba(74, 158, 255, 0.12);
+  color: var(--accent);
+}
+
+.viewSegBtnActiveCustomer {
+  background: rgba(78, 201, 176, 0.12);
+  color: var(--success);
+}
+
+.adminBadge,
+.customerBadge {
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+
+.adminBadge {
+  background: rgba(74, 158, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(74, 158, 255, 0.35);
+}
+
+.customerBadge {
+  background: rgba(78, 201, 176, 0.12);
+  color: var(--success);
+  border: 1px solid rgba(78, 201, 176, 0.35);
+}
+
 /* ── BOM budget vs actual (admin) ── */
 .bomBudgetWrap {
   flex-shrink: 0;
-  padding: var(--sp-3) var(--sp-5);
+  padding: var(--sp-3) var(--sp-4);
   border-bottom: 1px solid var(--border-light);
   background: var(--bg-panel);
   display: flex;
@@ -128,70 +201,6 @@
   font-size: var(--fs-xs);
   font-weight: 600;
   color: var(--text-bright);
-}
-
-.adminBadge {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  background: rgba(74, 158, 255, 0.15);
-  color: var(--accent);
-  border: 1px solid rgba(74, 158, 255, 0.35);
-}
-
-.customerBadge {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 2px 6px;
-  border-radius: var(--radius-sm);
-  background: rgba(78, 201, 176, 0.12);
-  color: var(--success);
-  border: 1px solid rgba(78, 201, 176, 0.35);
-}
-
-.viewSeg {
-  display: inline-flex;
-  border-radius: var(--radius-sm);
-  border: 1px solid var(--border);
-  overflow: hidden;
-  margin-left: var(--sp-2);
-}
-
-.viewSegBtn {
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.3px;
-  padding: 4px 10px;
-  border: none;
-  background: var(--bg-input);
-  color: var(--text-muted);
-  cursor: pointer;
-  transition: background 0.1s, color 0.1s;
-}
-
-.viewSegBtn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.viewSegBtn + .viewSegBtn {
-  border-left: 1px solid var(--border);
-}
-
-.viewSegBtnActive {
-  background: rgba(74, 158, 255, 0.12);
-  color: var(--accent);
-}
-
-.viewSegBtnActiveCustomer {
-  background: rgba(78, 201, 176, 0.12);
-  color: var(--success);
 }
 
 .toolbarRight {

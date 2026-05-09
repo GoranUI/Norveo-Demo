@@ -43,6 +43,9 @@ function emptyTemplate(): CompanyLineTemplate {
 
 type StatusFilter = 'all' | CatalogTemplateStatus;
 
+const PER_UNIT_CHECKBOX_TITLE =
+  'Qty follows driver (per-unit). Off = one line, unit price scales by driver quantity.';
+
 function disabledHint(kind: CatalogLineKind, driver: QuantityDriver, field: string): string | null {
   if (field === 'lem' && kind === 'subcontractor') {
     return 'Labor / equipment / material rates apply to costed lines only. Use Sub $ for a fixed subcontractor lump.';
@@ -167,11 +170,7 @@ export function CatalogWorkspace() {
       <div className={styles.topBar}>
         <div>
           <div className={styles.title}>Company catalog</div>
-          <div className={styles.sub}>
-            Reusable estimate / BOM line templates (labor, equipment, material, subcontractor, assemblies). Only{' '}
-            <strong>Published (active)</strong> lines can be added to a project — publishing bumps a version so
-            existing project pins stay traceable. Stored in this browser (localStorage).
-          </div>
+          <div className={styles.sub}>Reusable BOM line templates. Publish to use in projects.</div>
           <div className={styles.roleRow}>
             <span>Role (demo):</span>
             <select
@@ -186,12 +185,6 @@ export function CatalogWorkspace() {
               <option value="sales">Sales</option>
               <option value="companyAdmin">Catalog admin</option>
             </select>
-            {!isAdmin && (
-              <span>
-                — Choose <strong>Catalog admin</strong> to edit, publish, or delete lines. You can still add{' '}
-                <strong>active</strong> lines to the project.
-              </span>
-            )}
           </div>
         </div>
         <div className={styles.actions}>
@@ -222,7 +215,7 @@ export function CatalogWorkspace() {
 
       {missingStarterCount > 0 && (
         <div className={styles.starterStrip}>
-          <span>{missingStarterCount} demo starter line(s) not in your catalog yet.</span>
+          <span>{missingStarterCount} demo starter line(s) available.</span>
           <button type="button" className={styles.btnPrimary} onClick={addStarters}>
             Add demo starters
           </button>
@@ -251,13 +244,6 @@ export function CatalogWorkspace() {
           ))}
         </div>
       </div>
-
-      {!isAdmin && (
-        <div className={styles.readOnlyNote}>
-          Read-only catalog view — switch role to <strong>Catalog admin</strong> to change templates. Use checkboxes
-          + <strong>Add selected to project</strong> for active lines, or <strong>Add to project</strong> on a card.
-        </div>
-      )}
 
       <div className={styles.cardGrid}>
         {filtered.length === 0 ? (
@@ -394,9 +380,9 @@ export function CatalogWorkspace() {
                           className={styles.input}
                           disabled={!canEdit || t.kind === 'subcontractor'}
                           value={t.laborRate}
+                          title={lemHint ?? undefined}
                           onChange={(e) => updateRow(t.id, { laborRate: Number(e.target.value) || 0 })}
                         />
-                        {lemHint && <div className={styles.helper}>{lemHint}</div>}
                       </div>
                       <div>
                         <div className={styles.fieldLabel}>Equip $</div>
@@ -405,6 +391,7 @@ export function CatalogWorkspace() {
                           className={styles.input}
                           disabled={!canEdit || t.kind === 'subcontractor'}
                           value={t.equipRate}
+                          title={lemHint ?? undefined}
                           onChange={(e) => updateRow(t.id, { equipRate: Number(e.target.value) || 0 })}
                         />
                       </div>
@@ -415,6 +402,7 @@ export function CatalogWorkspace() {
                           className={styles.input}
                           disabled={!canEdit || t.kind === 'subcontractor'}
                           value={t.matRate}
+                          title={lemHint ?? undefined}
                           onChange={(e) => updateRow(t.id, { matRate: Number(e.target.value) || 0 })}
                         />
                       </div>
@@ -428,9 +416,9 @@ export function CatalogWorkspace() {
                           className={styles.input}
                           disabled={!canEdit || t.kind !== 'subcontractor' || t.driver === 'pct_total_material'}
                           value={t.subcontractorLump}
+                          title={subHint ?? undefined}
                           onChange={(e) => updateRow(t.id, { subcontractorLump: Number(e.target.value) || 0 })}
                         />
-                        {subHint && <div className={styles.helper}>{subHint}</div>}
                       </div>
                       <div>
                         <div className={styles.fieldLabel}>% material</div>
@@ -439,9 +427,9 @@ export function CatalogWorkspace() {
                           className={styles.input}
                           disabled={!canEdit || t.driver !== 'pct_total_material'}
                           value={t.ratePctOfMaterial}
+                          title={pctHint ?? undefined}
                           onChange={(e) => updateRow(t.id, { ratePctOfMaterial: Number(e.target.value) || 0 })}
                         />
-                        {pctHint && <div className={styles.helper}>{pctHint}</div>}
                       </div>
                     </div>
 
@@ -451,13 +439,11 @@ export function CatalogWorkspace() {
                         className={styles.chk}
                         checked={t.perUnit}
                         disabled={!canEdit || t.kind === 'subcontractor' || t.driver === 'pct_total_material'}
+                        title={perHint ?? undefined}
                         onChange={(e) => updateRow(t.id, { perUnit: e.target.checked })}
                       />
-                      <span>
-                        Qty follows driver (per-unit). Off = one line, unit price scales by driver quantity.
-                      </span>
+                      <span title={PER_UNIT_CHECKBOX_TITLE}>Per-unit pricing</span>
                     </div>
-                    {perHint && <div className={styles.helper}>{perHint}</div>}
 
                     <div className={styles.fieldLabel}>Default markup % (on insert)</div>
                     <input

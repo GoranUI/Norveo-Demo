@@ -338,11 +338,3 @@
 .assemblyRow select {
   flex: 1;
 }
-
-.readOnlyNote {
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: var(--sp-2);
-  border-radius: 6px;
-  background: var(--bg-hover);
-}
