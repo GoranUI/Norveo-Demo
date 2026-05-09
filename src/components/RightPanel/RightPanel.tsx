@@ -9,15 +9,24 @@ type Tab = 'tree' | 'props';
 interface Props {
   /** Default tab on mount. */
   defaultTab?: Tab;
+  /** Which side of the workspace this panel is anchored to. Defaults to 'right'. */
+  side?: 'left' | 'right';
 }
 
-export function RightPanel({ defaultTab = 'tree' }: Props) {
+export function RightPanel({ defaultTab = 'tree', side = 'right' }: Props) {
   const [tab, setTab] = useState<Tab>(defaultTab);
   const [collapsed, setCollapsed] = useState(false);
 
+  const sideClass = side === 'left' ? styles.panelLeft : styles.panelRight;
+
+  /* Collapse chevron points "into" the panel: on the left rail it points
+     right (expand outward), on the right rail it points left. */
+  const collapsedIcon = side === 'left' ? <ChevronRight size={14} /> : <ChevronLeft size={14} />;
+  const expandedIcon = side === 'left' ? <ChevronLeft size={14} /> : <ChevronRight size={14} />;
+
   if (collapsed) {
     return (
-      <div className={`${styles.panel} ${styles.panelCollapsed}`}>
+      <div className={`${styles.panel} ${sideClass} ${styles.panelCollapsed}`}>
         <button
           type="button"
           className={styles.collapseToggle}
@@ -25,14 +34,14 @@ export function RightPanel({ defaultTab = 'tree' }: Props) {
           aria-label="Expand panel"
           title="Expand panel"
         >
-          <ChevronLeft size={14} />
+          {collapsedIcon}
         </button>
       </div>
     );
   }
 
   return (
-    <div className={styles.panel}>
+    <div className={`${styles.panel} ${sideClass}`}>
       <div className={styles.header}>
         <div className={styles.tabs} role="tablist">
           <button
@@ -61,7 +70,7 @@ export function RightPanel({ defaultTab = 'tree' }: Props) {
           aria-label="Collapse panel"
           title="Collapse panel"
         >
-          <ChevronRight size={14} />
+          {expandedIcon}
         </button>
       </div>
       <div className={styles.content}>

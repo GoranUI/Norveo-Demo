@@ -96,8 +96,8 @@ export default function App({ initialWorkspace, initialProjectId }: { initialWor
       case 'engineering':
         return (
           <>
+            <RightPanel side="left" />
             <EngineeringWorkspace />
-            <RightPanel />
             <ConfigDrawer />
           </>
         );
