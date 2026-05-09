@@ -20,6 +20,7 @@ import { DrawingCanvas } from './components/DrawingCanvas/DrawingCanvas';
 import { LayerFilterBar } from './components/DesignWorkspace/LayerFilterBar';
 import { InspectorPanel } from './components/DesignWorkspace/InspectorPanel';
 import { ProjectKpiBar } from './components/ProjectKpiBar/ProjectKpiBar';
+import { RightPanel } from './components/RightPanel/RightPanel';
 import { getProjectById } from './components/BackOffice/mockProjects';
 import { getProjectProfile } from './data/projectProfiles';
 import type { Workspace } from './types';
@@ -96,6 +97,7 @@ export default function App({ initialWorkspace, initialProjectId }: { initialWor
         return (
           <>
             <EngineeringWorkspace />
+            <RightPanel />
             <ConfigDrawer />
           </>
         );

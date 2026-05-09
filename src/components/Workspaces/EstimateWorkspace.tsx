@@ -135,9 +135,17 @@ function columnsForView(view: EstimateView) {
 
 interface EstimateWorkspaceProps {
   estimateView: EstimateView;
+  /** When set (Procurement → Estimate), shows Admin/Customer toggle in the panel header. */
+  onEstimateViewChange?: (view: EstimateView) => void;
 }
 
-export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
+const INFLATION_DRIFT_TITLE =
+  'Flat rate, UI only; not applied to line totals.';
+
+export function EstimateWorkspace({
+  estimateView,
+  onEstimateViewChange,
+}: EstimateWorkspaceProps) {
   const { state, dispatch } = useApp();
   const [activeTab, setActiveTab] = useState<BudgetTab>('budget');
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
@@ -230,18 +238,18 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
     setSelectedRow(idx);
     if (estimateView === 'customer') {
       if (row.isSub) {
-        setFormulaText(`=SUM(Total for ${row.desc}) — customer quote (no margin column)`);
+        setFormulaText(`=SUM(${row.desc})`);
       } else if (row.desc) {
-        setFormulaText(`=${row.desc}: customer-facing rates include allowances; line total matches your quote`);
+        setFormulaText(`=${row.desc}`);
       } else {
         setFormulaText('Select a cell to view formula');
       }
       return;
     }
     if (row.isSub) {
-      setFormulaText(`=SUM(Total for ${row.desc})`);
+      setFormulaText(`=SUM(${row.desc})`);
     } else if (row.desc) {
-      setFormulaText(`=${row.desc}: ${row.qty} × (Equipment + Material + Labor) × (1 + Profit%)`);
+      setFormulaText(`=${row.desc}: ${row.qty} × (E + M + L) × (1 + Profit%)`);
     } else {
       setFormulaText('Select a cell to view formula');
     }
@@ -249,12 +257,11 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
 
   const gridCols = visibleCols.map((c) => c.width).join(' ');
 
+  const projectLabel = state.data.projectName || 'Project';
   const formulaBarText =
-    estimateView === 'customer' && selectedRow === null
-      ? `${state.data.projectName || 'Project'} quote preview — customer rates include allowances; current BOM material basis ${fmtMoney(materialBasis)}.`
-      : selectedRow === null
-        ? `${state.data.projectName || 'Project'} cost build — current BOM material basis ${fmtMoney(materialBasis)}. Select a cell to view formula.`
-        : formulaText;
+    selectedRow === null
+      ? `${projectLabel} — material basis ${fmtMoney(materialBasis)}`
+      : formulaText;
 
   const cellContent = (row: DisplayRow, col: { key: string; align: string; label: string }, isSub: boolean) => {
     const key = col.key as ColKey;
@@ -284,6 +291,32 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
 
   return (
     <div className={styles.outer}>
+      {onEstimateViewChange && (
+        <div className={styles.estimateModeBar}>
+          <div className={styles.viewSeg} role="group" aria-label="Estimate view">
+            <button
+              type="button"
+              className={`${styles.viewSegBtn} ${estimateView === 'admin' ? styles.viewSegBtnActive : ''}`}
+              onClick={() => onEstimateViewChange('admin')}
+            >
+              Admin
+            </button>
+            <button
+              type="button"
+              className={`${styles.viewSegBtn} ${estimateView === 'customer' ? styles.viewSegBtnActiveCustomer : ''}`}
+              onClick={() => onEstimateViewChange('customer')}
+            >
+              Customer
+            </button>
+          </div>
+          {estimateView === 'admin' ? (
+            <span className={styles.adminBadge}>Cost build</span>
+          ) : (
+            <span className={styles.customerBadge}>Quote</span>
+          )}
+        </div>
+      )}
+
       {estimateView === 'admin' && (
         <div className={styles.bomBudgetWrap}>
           <div className={styles.bomBudgetRow}>
@@ -302,8 +335,8 @@ export function EstimateWorkspace({ estimateView }: EstimateWorkspaceProps) {
               aria-label="Expected first month of construction"
             />
             {state.data.expectedBuildDate && buildHintPct != null && buildMonths > 0 && (
-              <span className={styles.bomBudgetHint}>
-                ~+{buildHintPct}% cumulative material drift hint ({buildMonths} mo — flat rate, UI only; not applied to line totals).
+              <span className={styles.bomBudgetHint} title={INFLATION_DRIFT_TITLE}>
+                ~+{buildHintPct}% drift ({buildMonths} mo)
               </span>
             )}
           </div>
