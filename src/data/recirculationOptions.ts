@@ -10,7 +10,20 @@ import { getOptionCost } from './configCosts';
 export interface RecirculationOption {
   value: string;
   label: string;
+  /** Sum of material + labor per linear foot — what the chip displays. */
   cost?: number;
+  /** Suffix appended to the cost chip (e.g. "/LF"). */
+  costSuffix?: string;
+  /** Material cost per linear foot. */
+  materialCostPerLf?: number;
+  /** Labor cost per linear foot. */
+  laborCostPerLf?: number;
+  /** Coping width when relevant (e.g. "12\""). */
+  width?: string;
+  /** Small inline badge next to the option label (mirrors `width`). */
+  badge?: string;
+  /** Auto-built breakdown copy shown via the row InfoHint. */
+  helpText?: string;
 }
 
 export interface RecirculationGroup {
@@ -51,12 +64,36 @@ const RAW_GROUPS: RecirculationGroup[] = [
   },
 ];
 
+function buildBreakdown(width: string | undefined, material: number, labor: number): string {
+  const parts: string[] = [];
+  if (width) parts.push(`Coping width ${width}.`);
+  if (material === 0 && labor === 0) {
+    parts.push('No material or labor cost (splash pad / N/A).');
+  } else {
+    parts.push(`Material $${material}/LF + Labor $${labor}/LF = $${material + labor}/LF.`);
+    parts.push('Total cost is per-LF × pool perimeter.');
+  }
+  return parts.join(' ');
+}
+
 export const RECIRCULATION_GROUPS: RecirculationGroup[] = RAW_GROUPS.map((g) => ({
   ...g,
-  options: g.options.map((o) => ({
-    ...o,
-    cost: getOptionCost('gutterStyle', o.value)?.cost,
-  })),
+  options: g.options.map((o) => {
+    const c = getOptionCost('gutterStyle', o.value);
+    if (!c) return o;
+    const material = c.materialCostPerLf ?? 0;
+    const labor = c.laborCostPerLf ?? 0;
+    return {
+      ...o,
+      cost: c.cost,
+      costSuffix: c.materialCostPerLf != null ? '/LF' : undefined,
+      badge: c.width,
+      materialCostPerLf: c.materialCostPerLf,
+      laborCostPerLf: c.laborCostPerLf,
+      width: c.width,
+      helpText: c.materialCostPerLf != null ? buildBreakdown(c.width, material, labor) : undefined,
+    };
+  }),
 }));
 
 export function familyOfVariant(value: string): string | null {

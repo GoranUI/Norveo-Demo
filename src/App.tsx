@@ -19,8 +19,8 @@ import { DesignLayersPanel } from './components/DesignWorkspace/DesignLayersPane
 import { DrawingCanvas } from './components/DrawingCanvas/DrawingCanvas';
 import { LayerFilterBar } from './components/DesignWorkspace/LayerFilterBar';
 import { InspectorPanel } from './components/DesignWorkspace/InspectorPanel';
+import { ToolStrip } from './components/ToolStrip/ToolStrip';
 import { ProjectKpiBar } from './components/ProjectKpiBar/ProjectKpiBar';
-import { RightPanel } from './components/RightPanel/RightPanel';
 import { getProjectById } from './components/BackOffice/mockProjects';
 import { getProjectProfile } from './data/projectProfiles';
 import type { Workspace } from './types';
@@ -96,7 +96,6 @@ export default function App({ initialWorkspace, initialProjectId }: { initialWor
       case 'engineering':
         return (
           <>
-            <RightPanel side="left" />
             <EngineeringWorkspace />
             <ConfigDrawer />
           </>
@@ -105,6 +104,7 @@ export default function App({ initialWorkspace, initialProjectId }: { initialWor
         return (
           <div className={styles.designWrapper}>
             <div className={styles.designContent}>
+              <ToolStrip />
               <DesignLayersPanel />
               <div className={styles.canvasArea}>
                 <LayerFilterBar />

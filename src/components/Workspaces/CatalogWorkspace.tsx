@@ -169,7 +169,7 @@ export function CatalogWorkspace() {
     <div className={styles.outer}>
       <div className={styles.topBar}>
         <div>
-          <div className={styles.title}>Company catalog</div>
+          <div className={styles.title}>Additional costs</div>
           <div className={styles.sub}>Reusable BOM line templates. Publish to use in projects.</div>
           <div className={styles.roleRow}>
             <span>Role (demo):</span>
@@ -181,9 +181,8 @@ export function CatalogWorkspace() {
               }
               aria-label="User role for catalog editing"
             >
-              <option value="engineer">Engineer</option>
-              <option value="sales">Sales</option>
-              <option value="companyAdmin">Catalog admin</option>
+              <option value="engineer">Eng</option>
+              <option value="companyAdmin">Admin</option>
             </select>
           </div>
         </div>

@@ -48,19 +48,105 @@
   margin-top: 0;
 }
 
-.sameRow {
+/* Owner “same as customer” — full-width tile + custom checkbox (aligns with option rows) */
+.sameAsCard {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: var(--sp-3);
+  width: 100%;
+  min-height: 36px;
   margin-bottom: var(--sp-4);
-  font-size: var(--fs-xs);
-  color: var(--text-secondary);
-  line-height: 1.4;
+  padding: var(--sp-2) var(--sp-4);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
+  color: var(--text-primary);
+  font-size: var(--fs-base);
+  line-height: 1.35;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    box-shadow 0.15s;
 }
 
-.sameRow input {
-  margin-top: 2px;
+.sameAsCard:hover {
+  background: var(--bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.sameAsCard:has(input:disabled) {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.sameAsCard:has(input:checked) {
+  border-color: var(--accent);
+  background: color-mix(
+    in srgb,
+    var(--accent) 12%,
+    color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel))
+  );
+  color: var(--text-bright);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.sameAsCard:focus-within {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.sameAsCard input[type='checkbox'] {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 14px;
+  height: 14px;
+  margin: 0;
   flex-shrink: 0;
+  border: 1.5px solid var(--border);
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--bg-base) 18%, transparent);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.sameAsCard:hover input[type='checkbox'] {
+  border-color: var(--text-muted);
+}
+
+.sameAsCard input[type='checkbox']:checked {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='8' viewBox='0 0 10 8' fill='none'%3E%3Cpath stroke='%23ffffff' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round' d='M1 4l2.5 2.5L9 1'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 10px 8px;
+}
+
+.sameAsCard input[type='checkbox']:focus {
+  outline: none;
+}
+
+.sameAsCardText {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--fs-base);
+}
+
+.sameAsLead {
+  font-weight: 600;
+  color: inherit;
+}
+
+.sameAsDetail {
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.sameAsCard:has(input:checked) .sameAsDetail {
+  color: color-mix(in srgb, var(--text-bright) 82%, var(--text-muted));
 }
 
 .formHint {

@@ -133,8 +133,6 @@ export function DrawingCanvas() {
     [authoringMode],
   );
 
-  const showGeometryPlanHint =
-    authoringMode === 'geometry' && activeTool !== 'estimating' && underlay === null;
   useEffect(() => {
     if (!ctxMenu) return;
     const onDown = (e: MouseEvent) => {
@@ -207,11 +205,6 @@ export function DrawingCanvas() {
       onDrop={onDrop}
       onDragOver={onDragOver}
     >
-      {showGeometryPlanHint && (
-        <div className={styles.geometryPlanHint}>
-          Select the Estimating tool (geometry toolbar) or drop a PNG/JPG here to load a plan underlay.
-        </div>
-      )}
       {planDropMessage && (
         <div className={styles.planDropMessage} role="status">
           {planDropMessage}

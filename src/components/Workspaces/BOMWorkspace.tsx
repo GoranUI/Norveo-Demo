@@ -57,7 +57,7 @@ function rowToLineRef(row: BOMRow): BOMLineRef {
 import { computeSwapPatch } from '../../data/projectItemSwap';
 import { isCatalogLineStale } from '../../data/companyCatalog';
 
-const CATEGORIES = ['Structural', 'Mechanical', 'Plumbing', 'Fixtures', 'Finishes', 'Company catalog'];
+const CATEGORIES = ['Structural', 'Mechanical', 'Plumbing', 'Fixtures', 'Finishes', 'Additional costs'];
 const STATUS_ORDER: ItemStatus[] = ['to-purchase', 'on-order', 'purchased', 'not-required'];
 const STATUS_OPTIONS = STATUS_ORDER.map((status) => ({
   value: status,
@@ -337,7 +337,7 @@ export function BOMWorkspace() {
           title="Edit reusable lines and quantity drivers"
           onClick={() => dispatch({ type: 'SET_WORKSPACE', workspace: 'catalog' })}
         >
-          <Library size={13} /> Company catalog
+          <Library size={13} /> Additional costs
         </button>
         <button className={styles.toolBtn}><FileDown size={13} /> Export</button>
         <button
