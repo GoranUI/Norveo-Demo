@@ -13,7 +13,16 @@ export interface NestedGroup {
   label: string;
   /** Optional overview copy for the family (info popover). */
   familyHelp?: string;
-  options: { value: string; label: string; cost?: number; helpText?: string }[];
+  options: {
+    value: string;
+    label: string;
+    cost?: number;
+    /** Suffix appended to the cost chip (e.g. "/LF"). */
+    costSuffix?: string;
+    /** Optional small badge shown next to the label (e.g. coping width "12\""). */
+    badge?: string;
+    helpText?: string;
+  }[];
 }
 
 interface BaseProps {
@@ -185,9 +194,17 @@ export function NestedOptionButton({
                     <span className={styles.optionDot}>
                       {isSelected && <span className={styles.optionDotInner} />}
                     </span>
-                    <span className={styles.optionLabel}>{opt.label}</span>
+                    <span className={styles.optionLabel}>
+                      {opt.label}
+                      {opt.badge && <span className={styles.optionBadge}>{opt.badge}</span>}
+                    </span>
                     {hasCosts && opt.cost != null && (
-                      <span className={styles.optionCost}>{fmtCost(opt.cost)}</span>
+                      <span className={styles.optionCost}>
+                        {fmtCost(opt.cost)}
+                        {opt.costSuffix && (
+                          <span className={styles.optionCostSuffix}>{opt.costSuffix}</span>
+                        )}
+                      </span>
                     )}
                   </button>
                   {opt.helpText && (

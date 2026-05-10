@@ -19,7 +19,11 @@ import { getTurnoverHoursForPoolType } from '../../data/engineering';
 import { estimateTotalDynamicHeadFt, pipesForDesignFlow } from '../../data/hydraulicsHead';
 import { calculateVolumeTotals } from '../../data/poolSections';
 import { flattenItems } from '../../data/projectItems';
+import { inflationHintPctTotal, monthsFromToday } from '../../data/inflationHints';
 import styles from './configuratorpage.module.css';
+
+const INFLATION_DRIFT_TITLE =
+  'Flat rate, UI only; not applied to line totals.';
 
 interface GroupInfo {
   group: StepGroup;
@@ -35,7 +39,7 @@ function fmtCurrency(n: number): string {
 const COST_CATEGORY_ORDER = ['Structural', 'Plumbing', 'Fixtures', 'Mechanical', 'Finishes'];
 
 function ConfiguratorSummary() {
-  const { state } = useApp();
+  const { state, dispatch } = useApp();
   const d = state.data;
   const [collapsed, setCollapsed] = useState(false);
 
@@ -114,6 +118,10 @@ function ConfiguratorSummary() {
     state.engineeringFlowAddGpm,
   ]);
 
+  const buildMonthValue = d.expectedBuildDate ? d.expectedBuildDate.slice(0, 7) : '';
+  const buildHintPct = inflationHintPctTotal(d.expectedBuildDate);
+  const buildMonths = d.expectedBuildDate ? monthsFromToday(d.expectedBuildDate) : 0;
+
   return (
     <aside
       className={`${styles.summaryPane} ${collapsed ? styles.summaryPaneCollapsed : ''}`}
@@ -161,6 +169,30 @@ function ConfiguratorSummary() {
             <span className={styles.summaryValue}>
               {m.surfaceArea > 0 ? `${Math.round(m.surfaceArea).toLocaleString()} sq ft` : '—'}
             </span>
+          </div>
+          <div className={styles.summaryRow}>
+            <span className={styles.summaryLabel}>Expected build</span>
+            <div className={styles.summaryBuildCell}>
+              <input
+                type="month"
+                className={styles.summaryMonthInput}
+                value={buildMonthValue}
+                disabled={d.isFinalized}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  dispatch({
+                    type: 'UPDATE_DATA',
+                    payload: { expectedBuildDate: v ? `${v}-01` : null },
+                  });
+                }}
+                aria-label="Expected first month of construction"
+              />
+              {d.expectedBuildDate && buildHintPct != null && buildMonths > 0 && (
+                <span className={styles.summaryHint} title={INFLATION_DRIFT_TITLE}>
+                  ~+{buildHintPct}% drift ({buildMonths} mo)
+                </span>
+              )}
+            </div>
           </div>
         </section>
 

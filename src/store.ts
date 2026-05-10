@@ -384,7 +384,7 @@ function ensureCompanyCatalogGroup(items: ProjectItem[]): ProjectItem[] {
     ...items,
     {
       id: COMPANY_CATALOG_GROUP_ID,
-      name: 'Company catalog',
+      name: 'Additional costs',
       category: 'Company',
       color: '#7e57c2',
       qty: 0,
@@ -713,8 +713,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
       return { ...state, snapEnabled: !state.snapEnabled };
     case 'TOGGLE_DIMENSIONS':
       return { ...state, showDimensions: !state.showDimensions };
-    case 'SET_USER_MODE':
-      return { ...state, userMode: action.mode };
+    case 'SET_USER_MODE': {
+      const userMode = action.mode === 'companyAdmin' ? 'companyAdmin' : 'engineer';
+      return { ...state, userMode };
+    }
     case 'SET_THEME':
       return { ...state, theme: action.theme };
     case 'SET_ENGINEERING_FLOW_ADD_GPM':

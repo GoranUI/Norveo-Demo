@@ -215,6 +215,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     },
     engineeringFlowAddGpm: 12,
     preset: {
+      expectedBuildDate: '2026-09-01',
       localCodeAwareness: 'yes',
       codeStandards: ['ispsc-2021'],
       customCodes: ['Springfield residential setback review'],
@@ -251,6 +252,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     defaultStatus: 'to-purchase',
     engineeringFlowAddGpm: 18,
     preset: {
+      expectedBuildDate: '2026-12-01',
       localCodeAwareness: 'help',
       codeStandards: [],
       customCodes: ['San Diego hotel spa plan-check pending'],
@@ -298,6 +300,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     },
     engineeringFlowAddGpm: 24,
     preset: {
+      expectedBuildDate: '2026-08-01',
       localCodeAwareness: 'yes',
       codeStandards: ['ispsc-2021'],
       customCodes: ['Austin vanishing-edge lot drainage note'],
@@ -344,6 +347,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     },
     engineeringFlowAddGpm: 42,
     preset: {
+      expectedBuildDate: '2026-07-01',
       localCodeAwareness: 'yes',
       codeStandards: ['ispsc-2021', 'az-maricopa-health'],
       customCodes: ['Scottsdale renovation phasing requirement'],
@@ -386,6 +390,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     defaultStatus: 'purchased',
     engineeringFlowAddGpm: 4,
     preset: {
+      expectedBuildDate: '2026-05-01',
       localCodeAwareness: 'yes',
       codeStandards: ['ispsc-2021'],
       customCodes: ['Denver residential setback confirmed'],
@@ -432,6 +437,7 @@ export const MOCK_PROJECT_PROFILES: Record<MockProject['id'], ProjectProfile> = 
     },
     engineeringFlowAddGpm: 16,
     preset: {
+      expectedBuildDate: '2026-10-01',
       localCodeAwareness: 'no',
       codeStandards: [],
       customCodes: [],

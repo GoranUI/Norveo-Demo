@@ -80,15 +80,42 @@
   border: 1px solid rgba(78, 201, 176, 0.35);
 }
 
-/* ── BOM budget vs actual (admin) ── */
-.bomBudgetWrap {
-  flex-shrink: 0;
-  padding: var(--sp-3) var(--sp-4);
-  border-bottom: 1px solid var(--border-light);
-  background: var(--bg-panel);
+/* ── Single estimate / budget table (fills workspace below mode bar) ── */
+.estimateMain {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: var(--sp-3);
+  overflow: hidden;
+  background: var(--bg-panel);
+}
+
+.bomBudgetTopBar {
+  flex-shrink: 0;
+  padding: var(--sp-3) var(--sp-4) 0;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.bomBudgetScroll {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.varGood {
+  color: var(--success);
+  font-weight: 600;
+}
+
+.varBad {
+  color: var(--danger);
+  font-weight: 600;
+}
+
+.varNeutral {
+  color: var(--text-muted);
+  font-weight: 500;
 }
 
 .bomBudgetRow {
@@ -121,6 +148,7 @@
 
 .bomBudgetTable {
   width: 100%;
+  min-width: 920px;
   border-collapse: collapse;
   font-size: 11px;
 }
@@ -180,71 +208,14 @@
   padding: var(--sp-4);
 }
 
-/* ── Toolbar ── */
-.toolbar {
+/* ── Customer: simplified quote (spreadsheet-style preview) ── */
+.customerQuote {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: var(--sp-2) var(--sp-5);
-  border-bottom: 1px solid var(--border-light);
+  flex-direction: column;
+  overflow: hidden;
   background: var(--bg-panel);
-  flex-shrink: 0;
-}
-
-.toolbarLeft {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-3);
-}
-
-.pageTitle {
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  color: var(--text-bright);
-}
-
-.toolbarRight {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-}
-
-.toolBtn {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  background: var(--bg-input);
-  border: 1px solid var(--border);
-  border-radius: var(--radius-sm);
-  color: var(--text-secondary);
-  font-size: var(--fs-xs);
-  padding: var(--sp-1) var(--sp-3);
-  cursor: pointer;
-  transition: background 0.1s, color 0.1s;
-}
-
-.toolBtn:hover {
-  background: var(--bg-hover);
-  color: var(--text-primary);
-}
-
-.toolBtnPrimary {
-  display: flex;
-  align-items: center;
-  gap: var(--sp-2);
-  background: var(--success);
-  border: 1px solid var(--success);
-  border-radius: var(--radius-sm);
-  color: #111;
-  font-size: var(--fs-xs);
-  font-weight: 600;
-  padding: var(--sp-1) var(--sp-3);
-  cursor: pointer;
-  transition: opacity 0.1s;
-}
-
-.toolBtnPrimary:hover {
-  opacity: 0.85;
 }
 
 /* ── Formula bar ── */
@@ -318,7 +289,6 @@
   flex: 1;
 }
 
-/* ── Row ── */
 .sheetRow {
   display: grid;
   min-height: 26px;
@@ -345,7 +315,6 @@
   background: rgba(255, 255, 255, 0.02);
 }
 
-/* ── Row number ── */
 .rowNum {
   font-size: var(--fs-xs);
   font-family: var(--font-mono);
@@ -360,7 +329,6 @@
   user-select: none;
 }
 
-/* ── Cell ── */
 .cell {
   font-size: var(--fs-xs);
   font-family: var(--font-mono);
@@ -395,50 +363,76 @@
   color: var(--text-bright);
 }
 
-.cellSubUcost {
-  color: var(--text-secondary);
-  font-weight: 500;
-}
-
 .cellSubTotal {
   color: var(--success);
   font-weight: 600;
 }
 
-/* ── Bottom tabs ── */
-.bottomBar {
+/* ── Toolbar ── */
+.toolbar {
   display: flex;
-  align-items: stretch;
-  border-top: 1px solid var(--border);
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-2) var(--sp-5);
+  border-bottom: 1px solid var(--border-light);
   background: var(--bg-panel);
   flex-shrink: 0;
 }
 
-.sheetTab {
-  padding: var(--sp-1) var(--sp-4);
+.toolbarLeft {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.pageTitle {
   font-size: var(--fs-xs);
-  color: var(--text-muted);
-  background: none;
-  border: none;
-  border-right: 1px solid var(--border-light);
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.toolbarRight {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  font-size: var(--fs-xs);
+  padding: var(--sp-1) var(--sp-3);
   cursor: pointer;
   transition: background 0.1s, color 0.1s;
 }
 
-.sheetTab:hover {
+.toolBtn:hover {
   background: var(--bg-hover);
   color: var(--text-primary);
 }
 
-.sheetTabActive {
-  background: var(--accent);
-  color: #fff;
+.toolBtnPrimary {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  background: var(--success);
+  border: 1px solid var(--success);
+  border-radius: var(--radius-sm);
+  color: #111;
+  font-size: var(--fs-xs);
   font-weight: 600;
+  padding: var(--sp-1) var(--sp-3);
+  cursor: pointer;
+  transition: opacity 0.1s;
 }
 
-.sheetTabActive:hover {
-  background: var(--accent);
-  color: #fff;
+.toolBtnPrimary:hover {
+  opacity: 0.85;
 }
 
 /* ── Responsive ── */
@@ -457,6 +451,11 @@
   .toolbarRight {
     width: 100%;
     justify-content: flex-end;
+  }
+
+  .bomBudgetScroll {
+    overflow: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sheetWrap {

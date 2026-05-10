@@ -246,7 +246,7 @@ export interface ProjectData {
 }
 
 // ── User mode ──
-export type UserMode = 'engineer' | 'sales' | 'companyAdmin';
+export type UserMode = 'engineer' | 'companyAdmin';
 
 // ── UI theme ──
 export type Theme = 'dark' | 'light';
@@ -758,7 +758,7 @@ export const WORKSPACE_LABELS: Record<Workspace, string> = {
   engineering: 'Engineering',
   design: 'Design',
   bom: 'Procurement',
-  catalog: 'Company catalog',
+  catalog: 'Additional costs',
   estimate: 'Estimate',
   deliverables: 'Deliverables',
   history: 'History',

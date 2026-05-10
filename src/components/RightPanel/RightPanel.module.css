@@ -2,10 +2,17 @@
   width: var(--panel-w);
   min-width: var(--panel-w);
   background: var(--bg-panel);
-  border-left: 1px solid var(--border);
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.panelRight {
+  border-left: 1px solid var(--border);
+}
+
+.panelLeft {
+  border-right: 1px solid var(--border);
 }
 
 .panelCollapsed {

@@ -241,7 +241,7 @@ export const STARTER_CATALOG_TEMPLATES: CompanyLineTemplate[] = [
     version: 0,
     lastPublishedAt: null,
     tags: ['starter', 'fee'],
-    category: 'Company catalog',
+    category: 'Additional costs',
     unit: 'LS',
     defaultMarkupPct: 0,
   },
@@ -415,7 +415,7 @@ export function projectItemFromCatalogTemplate(
   return {
     id,
     name: template.name,
-    category: template.category || 'Company catalog',
+    category: template.category || 'Additional costs',
     color: '#7e57c2',
     qty: resolved.qty,
     unit: resolved.unit,

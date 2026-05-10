@@ -90,14 +90,21 @@ export function CustomerForm() {
       />
 
       <h3 className={styles.blockTitle}>Owner (permits / legal)</h3>
-      <label className={styles.sameRow}>
+      <label className={styles.sameAsCard}>
         <input
           type="checkbox"
           checked={sameAsCustomer}
           onChange={(e) => handleSameToggle(e.target.checked)}
           disabled={disabled}
+          aria-label="Same as customer — use company name and project site for the owner block"
         />
-        <span>Same as customer — use company name and project site for owner block</span>
+        <span className={styles.sameAsCardText}>
+          <span className={styles.sameAsLead}>Same as customer</span>
+          <span className={styles.sameAsDetail}>
+            {' '}
+            — use company name and project site for the owner block
+          </span>
+        </span>
       </label>
       <TextInput
         label="Owner legal name"

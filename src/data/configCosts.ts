@@ -6,6 +6,12 @@
 interface OptionCost {
   cost: number;
   note?: string;
+  /** Material cost per linear foot (when applicable). */
+  materialCostPerLf?: number;
+  /** Labor cost per linear foot (when applicable). */
+  laborCostPerLf?: number;
+  /** Coping / element width (e.g. "12\"") when relevant. */
+  width?: string;
 }
 
 type StepCosts = Record<string, Record<string, OptionCost>>;
@@ -36,21 +42,26 @@ const COSTS: StepCosts = {
     'Fountain':             { cost: 28000,  note: 'Decorative fountain' },
     'Other':                { cost: 0 },
   },
+  /**
+   * Pool Recirculation — per-linear-foot cost (Travis May 9.2026).
+   * `cost` is `materialCostPerLf + laborCostPerLf`; the per-LF split is what
+   * the configurator shows and what Estimate uses to compute total = perimeter × cost.
+   */
   gutterStyle: {
-    // Skimmer family
-    'skimmer-12-coping':       { cost: 4500, note: 'Skimmer with 12" coping' },
-    'skimmer-18-coping':       { cost: 5200, note: 'Skimmer with 18" coping' },
-    'coping-no-skimmers':      { cost: 3800, note: 'Coping, no skimmers' },
-    'no-gutter-splash-pad':    { cost: 2800, note: 'No gutter — splash pad' },
-    // Gutter — Stainless Steel family
-    'ss-deck-level-weirs':     { cost: 24000, note: 'SS deck-level with weirs' },
-    'ss-deck-level':           { cost: 22000, note: 'SS deck-level' },
-    'ss-rollout':              { cost: 26000, note: 'SS rollout gutter' },
-    // Gutter — Concrete family
-    'concrete-deck-level':     { cost: 14000, note: 'Concrete deck-level gutter' },
-    'concrete-rollout':        { cost: 16000, note: 'Concrete rollout gutter' },
-    'concrete-rollout-parapet':{ cost: 19000, note: 'Concrete rollout w/ parapet' },
-    'concrete-fully-recessed': { cost: 21000, note: 'Concrete fully recessed' },
+    /* Skimmer family */
+    'coping-no-skimmers':      { cost: 45,  materialCostPerLf: 30,  laborCostPerLf: 15, note: 'Coping, no skimmers' },
+    'skimmer-12-coping':       { cost: 150, materialCostPerLf: 100, laborCostPerLf: 50, width: '12"', note: 'Skimmer with 12" coping' },
+    'skimmer-18-coping':       { cost: 160, materialCostPerLf: 110, laborCostPerLf: 50, width: '18"', note: 'Skimmer with 18" coping' },
+    'no-gutter-splash-pad':    { cost: 0,   materialCostPerLf: 0,   laborCostPerLf: 0,  note: 'No gutter — splash pad' },
+    /* Gutter — Stainless Steel family */
+    'ss-deck-level-weirs':     { cost: 180, materialCostPerLf: 140, laborCostPerLf: 40, note: 'SS deck-level with weirs' },
+    'ss-deck-level':           { cost: 215, materialCostPerLf: 175, laborCostPerLf: 40, note: 'SS deck-level' },
+    'ss-rollout':              { cost: 240, materialCostPerLf: 200, laborCostPerLf: 40, note: 'SS rollout gutter' },
+    /* Gutter — Concrete family */
+    'concrete-deck-level':     { cost: 200, materialCostPerLf: 150, laborCostPerLf: 50, note: 'Concrete deck-level gutter' },
+    'concrete-rollout':        { cost: 225, materialCostPerLf: 175, laborCostPerLf: 50, note: 'Concrete rollout gutter' },
+    'concrete-rollout-parapet':{ cost: 250, materialCostPerLf: 200, laborCostPerLf: 50, note: 'Concrete rollout w/ parapet' },
+    'concrete-fully-recessed': { cost: 275, materialCostPerLf: 225, laborCostPerLf: 50, note: 'Concrete fully recessed' },
   },
   copingStyle: {
     'Bull Nose':    { cost: 5400 },
