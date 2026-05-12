@@ -12,6 +12,22 @@
   border-bottom: 1px solid var(--border);
 }
 
+.formTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-5);
+  padding-bottom: var(--sp-3);
+  border-bottom: 1px solid var(--border);
+}
+
+.formTitleRow .formTitle {
+  margin-bottom: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+  flex: 1;
+}
+
 .formDesc {
   font-size: var(--fs-xs);
   color: var(--text-secondary);

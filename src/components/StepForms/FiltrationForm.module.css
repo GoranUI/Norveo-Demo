@@ -146,6 +146,14 @@
   min-width: 0;
 }
 
+.catFieldWide {
+  flex: 1;
+  min-width: 220px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
 .catFieldLabel {
   font-size: 10px;
   font-weight: 600;
@@ -433,7 +441,7 @@
 
 .compHead {
   display: grid;
-  grid-template-columns: 22px minmax(120px, 1.4fr) minmax(64px, 80px) minmax(64px, 80px) minmax(64px, 80px);
+  grid-template-columns: 22px minmax(120px, 1.4fr) minmax(44px, 56px) minmax(64px, 80px) minmax(64px, 80px) minmax(64px, 80px);
   gap: var(--sp-2);
   align-items: center;
   padding: var(--sp-2) var(--sp-3);
@@ -459,7 +467,7 @@
 
 .compRow {
   display: grid;
-  grid-template-columns: 22px minmax(120px, 1.4fr) minmax(64px, 80px) minmax(64px, 80px) minmax(64px, 80px);
+  grid-template-columns: 22px minmax(120px, 1.4fr) minmax(44px, 56px) minmax(64px, 80px) minmax(64px, 80px) minmax(64px, 80px);
   gap: var(--sp-2);
   box-sizing: border-box;
   min-height: var(--control-h);
@@ -468,7 +476,7 @@
   background: color-mix(in srgb, var(--bg-panel) 8%, var(--bg-input));
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  cursor: pointer;
+  cursor: default;
   transition:
     background 0.18s ease,
     border-color 0.18s ease,
@@ -480,15 +488,64 @@
   width: 100%;
 }
 
-.compRow:hover:not(:disabled) {
+.compRowMainBtn {
+  grid-column: 1 / 3;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: var(--sp-2);
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+}
+
+.compRowMainBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.compRow:hover .compRowMainBtn:not(:disabled) {
+  color: var(--text-bright);
+}
+
+.compRow:hover:not(:has(.compRowMainBtn:disabled)) {
   background: var(--bg-hover);
   border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
   box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-.compRow:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compRadio {
+  border-color: var(--text-muted);
+}
+
+.compQtyInput {
+  width: 100%;
+  max-width: 3.25rem;
+  box-sizing: border-box;
+  padding: 4px 6px;
+  font-size: var(--fs-sm);
+  font-variant-numeric: tabular-nums;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--bg-panel);
+  color: var(--text-primary);
+  text-align: right;
+}
+
+.compQtyInput:focus {
+  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline-offset: 1px;
+}
+
+.compQtyInput:disabled {
+  opacity: 0.55;
 }
 
 .compRowSelected {
@@ -545,11 +602,7 @@
   transition: border-color 0.15s;
 }
 
-.compRow:hover:not(:disabled) .compRadio {
-  border-color: var(--text-muted);
-}
-
-.compRowSelected .compRadio {
+.compRowSelected .compRowMainBtn:not(:disabled) .compRadio {
   border-color: var(--accent);
 }
 
@@ -597,7 +650,7 @@
 
   .compRow {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     grid-template-rows: auto auto;
     gap: var(--sp-2);
     min-height: auto;
@@ -605,25 +658,38 @@
     padding: var(--sp-3);
   }
 
-  .compRow > .compSelectCell {
+  .compRowMainBtn {
+    grid-column: 1 / -1;
     grid-row: 1;
+    width: 100%;
+  }
+
+  .compQtyCell {
     grid-column: 1;
-    align-self: center;
-    justify-content: flex-start;
-  }
-
-  .compRow > .compCell:nth-child(2) {
-    grid-row: 1;
-    grid-column: 2 / span 2;
-    font-weight: 600;
-  }
-
-  .compRow > .compCell:nth-child(3),
-  .compRow > .compCell:nth-child(4),
-  .compRow > .compCell:nth-child(5) {
     grid-row: 2;
-    grid-column: auto;
-    justify-content: flex-start;
+    justify-self: start;
+  }
+
+  .compMetricPer,
+  .compMetricTotal,
+  .compMetricRate {
+    justify-content: flex-start !important;
+    text-align: left !important;
+  }
+
+  .compMetricPer {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+  .compMetricTotal {
+    grid-column: 1;
+    grid-row: 3;
+  }
+
+  .compMetricRate {
+    grid-column: 2;
+    grid-row: 3;
   }
 }
 

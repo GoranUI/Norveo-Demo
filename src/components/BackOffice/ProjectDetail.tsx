@@ -36,7 +36,7 @@ const TAB_LABELS: Record<(typeof TAB_IDS)[number], string> = {
   configuration: 'Configuration',
   engineering: 'Engineering',
   estimate: 'Estimate',
-  bom: 'Procurement',
+  bom: 'Project Financials',
   deliverables: 'Deliverables',
   history: 'History',
   files: 'Files',

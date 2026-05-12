@@ -50,30 +50,35 @@ export const POOL_TYPES: PoolType[] = [
     id: 'Wave Pool',
     label: 'Wave Pool',
     ispscClass: 'Class D-1 (≥20k SF)',
+    description: 'Large wave basin (≥20k SF surface) — high bather loads and aggressive turnover.',
     turnoverHours: 2,
   },
   {
     id: 'Surf/Wave Small',
     label: 'Surf / Wave (Small)',
     ispscClass: 'Class D-1 (<20k SF)',
+    description: 'Smaller wave or surf venue — still treated as Class D-1 for turnover in this tool.',
     turnoverHours: 2,
   },
   {
     id: 'Activity Pool Shallow',
     label: 'Activity Pool — Shallow',
     ispscClass: 'Class D-2 (≤24 in.)',
+    description: 'Shallow play pool (≤24 in. water) — very fast turnover for splash and wading depth.',
     turnoverHours: 1,
   },
   {
     id: 'Activity Pool',
     label: 'Activity Pool',
     ispscClass: 'Class D-2 (>24 in.)',
+    description: 'Deeper activity / play pool — Class D-2 turnover for interactive water.',
     turnoverHours: 2,
   },
   {
     id: 'Slide Pool',
     label: 'Slide Pool',
     ispscClass: 'Class D-3',
+    description: 'Pool whose primary use is slide run-outs and plunge areas — Class D-3 sizing.',
     turnoverHours: 1,
   },
   {
@@ -87,6 +92,7 @@ export const POOL_TYPES: PoolType[] = [
     id: 'Vortex Pool',
     label: 'Vortex Pool',
     ispscClass: 'Class D-5',
+    description: 'Circular current / vortex feature — short turnover, specialized hydraulics.',
     turnoverHours: 1,
   },
   {
@@ -101,6 +107,7 @@ export const POOL_TYPES: PoolType[] = [
     id: 'Spa / Hot Tub',
     label: 'Spa / Hot Tub',
     ispscClass: 'Class E',
+    description: 'Elevated-temp vessel — high turnover per gallon, different chemistry than main pool.',
     turnoverHours: 0.5,
   },
   // Class F — Wading

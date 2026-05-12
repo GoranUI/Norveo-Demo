@@ -12,9 +12,9 @@ export function GutterStyleForm() {
     <div className={styles.form}>
       <h2 className={styles.formTitle}>Pool Recirculation</h2>
       <NestedOptionButton
-        mode="multi"
+        mode="single"
         label="Family"
-        groups={RECIRCULATION_GROUPS}
+        groups={RECIRCULATION_GROUPS as import('../ui/NestedOptionButton').NestedGroup[]}
         value={d.gutterStyle}
         onChange={(v) => dispatch({ type: 'UPDATE_DATA', payload: { gutterStyle: v } })}
         disabled={disabled}

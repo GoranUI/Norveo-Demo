@@ -3,7 +3,7 @@ import type { ConfigStep, ProjectData } from '../types';
 
 /** ProjectData keys that each config step primarily edits (for "pre-filled by template" badge). */
 const STEP_TO_KEYS: Partial<Record<ConfigStep, (keyof ProjectData)[]>> = {
-  [CS.ProjectType]: ['projectType'],
+  [CS.ProjectType]: ['projectType', 'poolEnvironment'],
   [CS.PoolUseType]: ['poolUseType'],
   [CS.GutterStyle]: ['gutterStyle'],
   [CS.CopingStyle]: ['copingStyle'],
@@ -13,7 +13,7 @@ const STEP_TO_KEYS: Partial<Record<ConfigStep, (keyof ProjectData)[]>> = {
   [CS.Filtration]: ['filtrationType'],
   [CS.Sanitation]: ['sanitationType'],
   [CS.ChemicalControl]: ['chemicalControl'],
-  [CS.SecondarySanitation]: ['secondarySanitation'],
+  [CS.SecondarySanitation]: ['secondarySanitation', 'secondarySanitationMode'],
   [CS.PhBuffer]: ['phBuffer'],
   [CS.Heating]: ['heatingSystem', 'poolEnvironment', 'heaterScenario', 'heaterTargetWaterTempF', 'heaterHeatUpDays', 'heaterEfficiencyPct'],
   [CS.InteriorFinish]: ['finishType'],

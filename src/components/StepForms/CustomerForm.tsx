@@ -90,6 +90,13 @@ export function CustomerForm() {
       />
 
       <h3 className={styles.blockTitle}>Owner (permits / legal)</h3>
+      {d.localCodeAwareness === 'yes' && d.codeStandards.length > 0 && (
+        <p className={styles.formDesc} style={{ marginTop: 0, marginBottom: 'var(--sp-3)' }}>
+          <strong>Permit packages:</strong> AHJs expect the owner block to match the property deed or
+          HOA agreement. Double-check spelling before filing — especially when ISPSC, MAHC, or state
+          pool codes are selected.
+        </p>
+      )}
       <label className={styles.sameAsCard}>
         <input
           type="checkbox"

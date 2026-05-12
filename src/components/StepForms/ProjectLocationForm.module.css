@@ -93,13 +93,24 @@
 }
 
 .mapWrap {
-  height: 220px;
+  height: 280px;
   width: 100%;
   border-radius: var(--radius-sm);
   border: 1px solid var(--border);
   overflow: hidden;
   margin: 0 0 var(--sp-3);
   z-index: 0;
+}
+
+.mapPlaceholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--bg-panel) 88%, var(--bg-input));
+  color: var(--text-muted);
+  font-size: var(--fs-sm);
+  text-align: center;
+  padding: var(--sp-4);
 }
 
 .pendingBanner {

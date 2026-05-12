@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { useApp } from '../../store';
 import {
@@ -72,6 +72,7 @@ export function CatalogWorkspace() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [editorId, setEditorId] = useState<string | null>(null);
 
   const setTemplates = (next: CompanyLineTemplate[]) => {
     dispatch({ type: 'SET_COMPANY_CATALOG', templates: next });
@@ -119,6 +120,14 @@ export function CatalogWorkspace() {
     }
     return list;
   }, [templates, statusFilter, search]);
+
+  useEffect(() => {
+    if (filtered.length === 0) {
+      setEditorId(null);
+      return;
+    }
+    setEditorId((prev) => (prev && filtered.some((x) => x.id === prev) ? prev : filtered[0].id));
+  }, [filtered]);
 
   const toggleSelect = (id: string) => {
     const t = templates.find((x) => x.id === id);
@@ -207,7 +216,7 @@ export function CatalogWorkspace() {
             onClick={() => dispatch({ type: 'SET_WORKSPACE', workspace: 'bom' })}
           >
             <ClipboardList size={13} aria-hidden />
-            Open Procurement
+            Open Project Financials
           </button>
         </div>
       </div>
@@ -244,11 +253,29 @@ export function CatalogWorkspace() {
         </div>
       </div>
 
-      <div className={styles.cardGrid}>
+      <div className={styles.catalogSplit}>
+        <aside className={styles.catalogSidebar} aria-label="Catalog lines">
+          <div className={styles.sidebarHeader}>Catalog lines</div>
+          <div className={styles.sidebarList}>
+            {filtered.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                className={`${styles.sidebarItem} ${editorId === t.id ? styles.sidebarItemActive : ''}`}
+                onClick={() => setEditorId(t.id)}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        </aside>
+        <div className={styles.cardGrid}>
         {filtered.length === 0 ? (
           <p className={styles.empty}>No lines match filters.</p>
         ) : (
-          filtered.map((t) => {
+          filtered
+            .filter((t) => t.id === editorId)
+            .map((t) => {
             const canEdit = isAdmin && t.status !== 'archived';
             const canSelect = t.status === 'active' && t.kind !== 'assembly';
             const lemHint = disabledHint(t.kind, t.driver, 'lem');
@@ -549,6 +576,7 @@ export function CatalogWorkspace() {
             );
           })
         )}
+      </div>
       </div>
     </div>
   );

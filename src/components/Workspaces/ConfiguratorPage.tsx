@@ -11,8 +11,7 @@ import {
   PanelRightOpen,
 } from 'lucide-react';
 import { useApp } from '../../store';
-import { CONFIGURATOR_STEP_GROUPS, STEP_DEFINITIONS } from '../../types';
-import type { StepGroup, ConfigStep } from '../../types';
+import { CONFIGURATOR_STEP_GROUPS, STEP_DEFINITIONS, ConfigStep, type StepGroup } from '../../types';
 import { WIZARD_STEP_FORMS } from '../StepEditor/StepEditor';
 import { isStepPrefilledFromTemplate } from '../../utils/stepPrefill';
 import { getTurnoverHoursForPoolType } from '../../data/engineering';
@@ -24,6 +23,24 @@ import styles from './configuratorpage.module.css';
 
 const INFLATION_DRIFT_TITLE =
   'Flat rate, UI only; not applied to line totals.';
+
+const PROJECT_INFO_SEGMENTS: {
+  id: 'contacts' | 'site' | 'code';
+  label: string;
+  steps: ConfigStep[];
+}[] = [
+  { id: 'contacts', label: 'Contacts', steps: [ConfigStep.Customer] },
+  {
+    id: 'site',
+    label: 'Project',
+    steps: [ConfigStep.ProjectLocation, ConfigStep.ProjectType, ConfigStep.PoolUseType],
+  },
+  {
+    id: 'code',
+    label: 'Code',
+    steps: [ConfigStep.LocalCodeAwareness, ConfigStep.LocalCodeDetails],
+  },
+];
 
 interface GroupInfo {
   group: StepGroup;
@@ -379,6 +396,9 @@ function ConfiguratorPage() {
     groupData.find((g) => g.completed < g.total)?.group ?? groupData[0]?.group ?? null
   ));
   const [highlightStep, setHighlightStep] = useState<ConfigStep | null>(null);
+  /** Mechanical Systems: which single step is shown in the main pane. */
+  const [mechanicalStepFocus, setMechanicalStepFocus] = useState<ConfigStep | null>(null);
+  const [projectInfoSegment, setProjectInfoSegment] = useState<'contacts' | 'site' | 'code'>('contacts');
   const stepBlockRefs = useRef<Map<ConfigStep, HTMLDivElement>>(new Map());
 
   // Honor an external `state.activeStep` request (e.g. clicking a row in
@@ -393,6 +413,13 @@ function ConfiguratorPage() {
     const stateTid = window.setTimeout(() => {
       setActiveGroup(stepDef.group);
       setHighlightStep(target);
+      if (stepDef.group === 'Mechanical Systems') {
+        setMechanicalStepFocus(target);
+      }
+      if (stepDef.group === 'Project Information') {
+        const seg = PROJECT_INFO_SEGMENTS.find((s) => s.steps.includes(target));
+        if (seg) setProjectInfoSegment(seg.id);
+      }
     }, 0);
 
     const scrollTid = window.setTimeout(() => {
@@ -415,6 +442,15 @@ function ConfiguratorPage() {
   const selectedGroup = activeGroup && groupData.some((g) => g.group === activeGroup)
     ? activeGroup
     : groupData.find((g) => g.completed < g.total)?.group ?? groupData[0]?.group;
+
+  useEffect(() => {
+    if (selectedGroup !== 'Mechanical Systems') {
+      setMechanicalStepFocus(null);
+    }
+    if (selectedGroup !== 'Project Information') {
+      setProjectInfoSegment('contacts');
+    }
+  }, [selectedGroup]);
 
   const totalSteps = groupData.reduce((sum, g) => sum + g.total, 0);
   const totalCompleted = groupData.reduce((sum, g) => sum + g.completed, 0);
@@ -441,6 +477,25 @@ function ConfiguratorPage() {
     if (!active) return [];
     return active.steps.filter((s) => renderedForms.has(s.id));
   }, [active, renderedForms]);
+
+  const paneRenderSteps = useMemo(() => {
+    if (!active) return [];
+    const base = active.steps.filter((s) => renderedForms.has(s.id));
+    if (active.group === 'Mechanical Systems') {
+      const focus =
+        mechanicalStepFocus ??
+        base.find((s) => !s.isComplete(d))?.id ??
+        base[0]?.id ??
+        null;
+      return focus ? base.filter((s) => s.id === focus) : base;
+    }
+    if (active.group === 'Project Information') {
+      const seg = PROJECT_INFO_SEGMENTS.find((s) => s.id === projectInfoSegment);
+      if (!seg) return base;
+      return base.filter((s) => seg.steps.includes(s.id));
+    }
+    return base;
+  }, [active, mechanicalStepFocus, projectInfoSegment, renderedForms, d]);
 
   return (
     <div className={styles.outer}>
@@ -521,27 +576,66 @@ function ConfiguratorPage() {
                   </div>
                 </div>
               </div>
-              {jumpNavSteps.length > 2 && (
+              {active.group === 'Project Information' ? (
+                <div
+                  className={styles.stepSubNav}
+                  role="navigation"
+                  aria-label="Project information sections"
+                >
+                  <span className={styles.stepSubNavLabel}>Section</span>
+                  <div className={styles.stepSubNavChips}>
+                    {PROJECT_INFO_SEGMENTS.map((seg) => {
+                      const done = seg.steps.every((id) => {
+                        const def = STEP_DEFINITIONS.find((x) => x.id === id);
+                        return def ? def.isComplete(d) : false;
+                      });
+                      const isCurrent = projectInfoSegment === seg.id;
+                      return (
+                        <button
+                          key={seg.id}
+                          type="button"
+                          className={`${styles.stepSubNavChip} ${done ? styles.stepSubNavChipDone : ''} ${isCurrent ? styles.stepSubNavChipCurrent : ''}`}
+                          onClick={() => setProjectInfoSegment(seg.id)}
+                        >
+                          {seg.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : jumpNavSteps.length > 1 ? (
                 <div
                   className={styles.stepSubNav}
                   role="navigation"
                   aria-label={`${active.group} — jump to step`}
                 >
-                  <span className={styles.stepSubNavLabel}>Jump to</span>
+                  <span className={styles.stepSubNavLabel}>
+                    {active.group === 'Mechanical Systems' ? 'Mechanical step' : 'Jump to'}
+                  </span>
                   <div className={styles.stepSubNavChips}>
                     {jumpNavSteps.map((s) => {
                       const done = s.isComplete(d);
+                      const isMech = active.group === 'Mechanical Systems';
+                      const focusId =
+                        mechanicalStepFocus ??
+                        jumpNavSteps.find((x) => !x.isComplete(d))?.id ??
+                        jumpNavSteps[0]?.id;
+                      const isCurrent = isMech && focusId === s.id;
                       return (
                         <button
                           key={s.id}
                           type="button"
-                          className={`${styles.stepSubNavChip} ${done ? styles.stepSubNavChipDone : ''}`}
+                          className={`${styles.stepSubNavChip} ${done ? styles.stepSubNavChipDone : ''} ${isCurrent ? styles.stepSubNavChipCurrent : ''}`}
                           onClick={() => {
-                            stepBlockRefs.current
-                              .get(s.id)
-                              ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                            setHighlightStep(s.id);
-                            window.setTimeout(() => setHighlightStep(null), 1400);
+                            if (isMech) {
+                              setMechanicalStepFocus(s.id);
+                            } else {
+                              stepBlockRefs.current
+                                .get(s.id)
+                                ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                              setHighlightStep(s.id);
+                              window.setTimeout(() => setHighlightStep(null), 1400);
+                            }
                           }}
                         >
                           {s.label}
@@ -550,11 +644,9 @@ function ConfiguratorPage() {
                     })}
                   </div>
                 </div>
-              )}
+              ) : null}
               <div className={styles.paneBody}>
-                {active.steps
-                  .filter((s) => renderedForms.has(s.id))
-                  .map((s) => {
+                {paneRenderSteps.map((s) => {
                     const Form = renderedForms.get(s.id)!;
                     const isDone = s.isComplete(d);
                     const isHighlight = highlightStep === s.id;

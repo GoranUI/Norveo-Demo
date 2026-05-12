@@ -3,7 +3,7 @@ import { ConfigStep } from '../../types';
 import { ProjectLocationForm } from '../StepForms/ProjectLocationForm';
 import { CustomerForm } from '../StepForms/CustomerForm';
 import { ProjectTypeForm } from '../StepForms/ProjectTypeForm';
-import { LocalCodeForm } from '../StepForms/LocalCodeForm';
+import { LocalCodeAwarenessForm, LocalCodeDetailsForm } from '../StepForms/LocalCodeForm';
 import { PoolUseForm } from '../StepForms/PoolUseForm';
 import { VolumeForm } from '../StepForms/VolumeForm';
 import { DeckForm } from '../StepForms/DeckForm';
@@ -29,8 +29,8 @@ export const WIZARD_STEP_FORMS: Record<ConfigStep, React.FC> = {
   [ConfigStep.ProjectLocation]: ProjectLocationForm,
   [ConfigStep.Customer]: CustomerForm,
   [ConfigStep.ProjectType]: ProjectTypeForm,
-  [ConfigStep.LocalCodeAwareness]: LocalCodeForm,
-  [ConfigStep.LocalCodeDetails]: LocalCodeForm,
+  [ConfigStep.LocalCodeAwareness]: LocalCodeAwarenessForm,
+  [ConfigStep.LocalCodeDetails]: LocalCodeDetailsForm,
   [ConfigStep.PoolUseType]: PoolUseForm,
   [ConfigStep.Volume]: VolumeForm,
   [ConfigStep.Deck]: DeckForm,

@@ -557,6 +557,12 @@
   color: var(--success);
 }
 
+.stepSubNavChipCurrent {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--border));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 22%, transparent);
+  color: var(--accent);
+}
+
 .paneBody {
   max-width: 780px;
   padding: var(--sp-2) 0 var(--sp-2) 32px;

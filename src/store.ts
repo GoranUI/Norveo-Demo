@@ -116,10 +116,13 @@ type LegacyPreset = Partial<Omit<ProjectData, 'gutterStyle'>> & {
   gutterStyle?: string | string[] | null;
 };
 
-function normalizeGutterStyle(value: LegacyPreset['gutterStyle']): string[] {
-  if (Array.isArray(value)) return value.filter((v): v is string => typeof v === 'string' && v.trim() !== '');
-  if (typeof value === 'string' && value.trim() !== '') return [value];
-  return [];
+function normalizeGutterStyle(value: LegacyPreset['gutterStyle']): string | null {
+  if (Array.isArray(value)) {
+    const first = value.find((v) => typeof v === 'string' && v.trim() !== '');
+    return first ?? null;
+  }
+  if (typeof value === 'string' && value.trim() !== '') return value;
+  return null;
 }
 
 function normalizePreset(preset: LegacyPreset): Partial<ProjectData> {
@@ -149,10 +152,11 @@ export const DEFAULT_DATA: ProjectData = {
   deckSf: 1500,
   numDivingBoards: 1,
   divingBoardExclusionSf: 300,
+  deckDivingWizardOverride: false,
   // ── Pool Design ──
   // SS deck-level gutter pairs naturally with a flat coping for code-compliant
   // commercial pools. Cantilevered would also work but reads "residential."
-  gutterStyle: ['ss-deck-level'],
+  gutterStyle: 'ss-deck-level',
   copingStyle: 'Flat',
   // ── Mechanical Systems ──
   // Engineer-led project (knows their systems), so MechanicalPriorities is
@@ -173,9 +177,12 @@ export const DEFAULT_DATA: ProjectData = {
   filtrationType: 'Sand',
   selectedFilterModelId: null,
   filterCount: 3,
+  filterCatalogQtyByModelId: {},
   filterDesignRateGpmPerSf: null,
   filterBackwashRateGpmPerSf: null,
   filterSewerCapacityGpm: 200,
+  filterSewerLineNominalIn: null,
+  retentionDisposalMode: 'retention',
   filterRetentionTimeMin: 6,
   filterRetentionPitLengthFt: 7,
   filterRetentionPitWidthFt: 7,
@@ -190,6 +197,7 @@ export const DEFAULT_DATA: ProjectData = {
   // pools and recommended outdoors. Ozone left off to keep the equipment
   // pad reasonable for a 100k gal pool.
   secondarySanitation: ['Ultraviolet Light System'],
+  secondarySanitationMode: 'auto',
   // CO₂ is gentler on equipment than acid and standard for commercial.
   phBuffer: 'CO2',
   // Gas heater — most common in TX, where natural gas is plentiful.
@@ -212,6 +220,16 @@ export const DEFAULT_DATA: ProjectData = {
   tileBandHeight: '6"',
   customTileHeight: '',
   stairNosingDetail: 'Contrasting',
+  waterlineTileEnabled: true,
+  waterlineBandInches: 6,
+  waterlineTileSizeLabel: '6×6',
+  waterlinePickMode: 'unknown',
+  waterlinePriceTier: 'high',
+  allTilePool: false,
+  applyWaterlineTileToBody: false,
+  finishBrand: null,
+  finishProductLine: null,
+  finishColorName: null,
   // ── Features ──
   // Bubbler at the entry stairs is a common modern accent in public pools.
   waterFeatures: ['Bubbler'],
@@ -255,7 +273,8 @@ function createBlankProjectData(): ProjectData {
     deckSf: 0,
     numDivingBoards: 0,
     divingBoardExclusionSf: 300,
-    gutterStyle: [],
+    deckDivingWizardOverride: false,
+    gutterStyle: null,
     copingStyle: null,
     mechanicalKnowledge: null,
     mechanicalBrandPreference: '',
@@ -271,9 +290,12 @@ function createBlankProjectData(): ProjectData {
     filtrationType: null,
     selectedFilterModelId: null,
     filterCount: 1,
+    filterCatalogQtyByModelId: {},
     filterDesignRateGpmPerSf: null,
     filterBackwashRateGpmPerSf: null,
     filterSewerCapacityGpm: 0,
+    filterSewerLineNominalIn: null,
+    retentionDisposalMode: 'retention',
     filterRetentionTimeMin: 6,
     filterRetentionPitLengthFt: 0,
     filterRetentionPitWidthFt: 0,
@@ -281,6 +303,7 @@ function createBlankProjectData(): ProjectData {
     sanitationType: null,
     chemicalControl: null,
     secondarySanitation: [],
+    secondarySanitationMode: 'auto',
     phBuffer: null,
     heatingSystem: [],
     poolEnvironment: 'outdoor',
@@ -297,6 +320,16 @@ function createBlankProjectData(): ProjectData {
     tileBandHeight: null,
     customTileHeight: '',
     stairNosingDetail: null,
+    waterlineTileEnabled: false,
+    waterlineBandInches: 6,
+    waterlineTileSizeLabel: null,
+    waterlinePickMode: 'unknown',
+    waterlinePriceTier: null,
+    allTilePool: false,
+    applyWaterlineTileToBody: false,
+    finishBrand: null,
+    finishProductLine: null,
+    finishColorName: null,
     waterFeatures: [],
     poolFeatures: [],
     isFinalized: false,
@@ -322,7 +355,7 @@ function createProjectData(preset: LegacyPreset = {}): ProjectData {
     poolSections: normalizedPreset.poolSections
       ? normalizedPreset.poolSections.map((s) => ({ ...s }))
       : blank.poolSections,
-    gutterStyle: normalizedPreset.gutterStyle ? [...normalizedPreset.gutterStyle] : [],
+    gutterStyle: normalizedPreset.gutterStyle ?? blank.gutterStyle,
     codeStandards: normalizedPreset.codeStandards ? [...normalizedPreset.codeStandards] : [],
     customCodes: normalizedPreset.customCodes ? [...normalizedPreset.customCodes] : [],
     mechanicalPriorities: normalizedPreset.mechanicalPriorities ? [...normalizedPreset.mechanicalPriorities] : [],
@@ -440,12 +473,20 @@ export const INITIAL_STATE: AppState = {
   activityLog: [...SEED_ACTIVITY],
   selectedFileId: null,
   companyCatalogTemplates: loadCompanyCatalogFromStorage(),
+  engineeringSubView: 'calculations',
 };
 
 export function appReducer(state: AppState, action: AppAction): AppState {
   switch (action.type) {
     case 'SET_WORKSPACE':
-      return { ...state, activeWorkspace: action.workspace };
+      return {
+        ...state,
+        activeWorkspace: action.workspace,
+        engineeringSubView:
+          action.workspace === 'engineering' ? state.engineeringSubView : 'calculations',
+      };
+    case 'SET_ENGINEERING_SUB_VIEW':
+      return { ...state, engineeringSubView: action.view };
     case 'SET_FILES_VIEW':
       return {
         ...state,

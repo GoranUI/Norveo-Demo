@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../store';
 import { calculateVolumeTotals } from '../../data/poolSections';
+import { isDeckStepVisible } from '../../utils/codeFeatures';
 import formStyles from './forms.module.css';
 import styles from './DeckForm.module.css';
 
@@ -35,6 +36,43 @@ export function DeckForm() {
 
   const setDeckSf = (v: number) =>
     dispatch({ type: 'UPDATE_DATA', payload: { deckSf: Math.max(0, v) } });
+
+  const showInputs = isDeckStepVisible(d);
+
+  if (!showInputs) {
+    return (
+      <div className={formStyles.form}>
+        <div className={styles.titleRow}>
+          <h2 className={formStyles.formTitle}>Deck</h2>
+        </div>
+        <p className={formStyles.formDesc}>
+          Total deck surface area surrounding the pool. The deck-to-pool ratio drives the bather-load
+          category used downstream in engineering.
+        </p>
+        <div className={styles.naPanel}>
+          <p className={styles.naTitle}>Not applicable for the selected pool class</p>
+          <p className={styles.naBody}>
+            For fountains, splash pads, and similar vessels we usually skip deck sizing in this
+            wizard. If your jurisdiction or contract still needs deck square footage, enable the
+            override below.
+          </p>
+          <div className={styles.naActions}>
+            <button
+              type="button"
+              className={styles.naBtn}
+              disabled={disabled}
+              onClick={() =>
+                dispatch({ type: 'UPDATE_DATA', payload: { deckDivingWizardOverride: true } })
+              }
+            >
+              Configure deck anyway
+            </button>
+            <span className={styles.naGhost}>Also shows the Diving Board step when it was hidden.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const isComplete = d.deckSf > 0;
 

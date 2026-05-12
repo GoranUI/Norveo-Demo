@@ -28,12 +28,15 @@ const FINISH_KEYWORDS: Record<string, string> = {
   gunite: 'Plaster',
 };
 
-function extractFromPoolType(poolType: string): { gutterStyle?: string[]; finishType?: string } {
+function extractFromPoolType(poolType: string): { gutterStyle?: string; finishType?: string } {
   const lower = poolType.toLowerCase();
-  let gutterStyle: string[] | undefined;
+  let gutterStyle: string | undefined;
   let finishType: string | undefined;
   for (const [kw, val] of Object.entries(GUTTER_KEYWORDS)) {
-    if (lower.includes(kw)) { gutterStyle = val; break; }
+    if (lower.includes(kw)) {
+      gutterStyle = val[0];
+      break;
+    }
   }
   for (const [kw, val] of Object.entries(FINISH_KEYWORDS)) {
     if (lower.includes(kw)) { finishType = val; break; }
@@ -63,7 +66,7 @@ const DEMO_READY_PROJECT_PRESET: Partial<ProjectData> = {
   ],
   deckSf: 620,
   numDivingBoards: 0,
-  gutterStyle: ['skimmer-12-coping'],
+  gutterStyle: 'skimmer-12-coping',
   copingStyle: 'Bull Nose',
   mechanicalKnowledge: 'know',
   brandPreferences: {
@@ -127,7 +130,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Residential',
       poolUseType: 'Residential',
-      gutterStyle: ['skimmer-12-coping'],
+      gutterStyle: 'skimmer-12-coping',
       copingStyle: 'Bull Nose',
       mechanicalKnowledge: 'help',
       filtrationType: 'Sand',
@@ -152,7 +155,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Commercial',
       poolUseType: 'Public Pool',
-      gutterStyle: ['concrete-deck-level'],
+      gutterStyle: 'concrete-deck-level',
       copingStyle: 'Flat',
       mechanicalKnowledge: 'know',
       filtrationType: 'Sand',
@@ -182,7 +185,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Residential',
       poolUseType: 'Residential Spa',
-      gutterStyle: ['concrete-fully-recessed'],
+      gutterStyle: 'concrete-fully-recessed',
       copingStyle: 'Bull Nose',
       mechanicalKnowledge: 'help',
       filtrationType: 'Cartridge',
@@ -207,7 +210,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Residential',
       poolUseType: 'Residential',
-      gutterStyle: ['concrete-rollout'],
+      gutterStyle: 'concrete-rollout',
       copingStyle: 'Bull Nose',
       mechanicalKnowledge: 'help',
       filtrationType: 'Cartridge',
@@ -234,7 +237,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Commercial',
       poolUseType: 'Public Pool',
-      gutterStyle: ['concrete-deck-level'],
+      gutterStyle: 'concrete-deck-level',
       copingStyle: 'Flat',
       mechanicalKnowledge: 'know',
       filtrationType: 'Sand',
@@ -264,7 +267,7 @@ export const PROJECT_TEMPLATES: ProjectTemplate[] = [
     preset: {
       projectType: 'Commercial',
       poolUseType: 'Competition Pool',
-      gutterStyle: ['ss-deck-level-weirs'],
+      gutterStyle: 'ss-deck-level-weirs',
       copingStyle: 'Flat',
       mechanicalKnowledge: 'know',
       filtrationType: 'DE',

@@ -150,6 +150,7 @@ export function ProjectLocationForm() {
       const L = leafletMod.default;
 
       if (!mapContainerRef.current) return;
+      mapContainerRef.current.replaceChildren();
 
       if (mapRef.current) {
         mapRef.current.remove();
@@ -237,7 +238,10 @@ export function ProjectLocationForm() {
   return (
     <div className={styles.form}>
       <h2 className={styles.formTitle}>Project Location</h2>
-      <p className={styles.formDesc}>Enter the project site address.</p>
+      <p className={styles.formDesc}>
+        Start from the map once you have a lookup result, or type the legal site address first and run{' '}
+        <strong>Look up address</strong>.
+      </p>
       <TextInput
         label="Project Name"
         value={d.projectName}
@@ -245,18 +249,13 @@ export function ProjectLocationForm() {
         placeholder="e.g. Smith Residence"
         disabled={disabled}
       />
-      <TextInput
-        label="Street Address"
-        value={d.projectAddress}
-        onChange={(v) => update({ projectAddress: v })}
-        placeholder="123 Main St"
-        disabled={disabled}
-        required
-      />
-      <div className={styles.row3}>
-        <TextInput label="City" value={d.projectCity} onChange={(v) => update({ projectCity: v })} disabled={disabled} required />
-        <TextInput label="State" value={d.projectState} onChange={(v) => update({ projectState: v })} disabled={disabled} required />
-        <TextInput label="Zip" value={d.projectZip} onChange={(v) => update({ projectZip: v })} disabled={disabled} required />
+
+      <div
+        ref={mapContainerRef}
+        className={`${geoStyles.mapWrap} ${!mapEnabled ? geoStyles.mapPlaceholder : ''}`}
+        aria-label={mapEnabled ? 'Map — click or drag pin' : 'Map preview — run address lookup to place pin'}
+      >
+        {!mapEnabled && <span>Search the address below to load the interactive map.</span>}
       </div>
 
       <div className={geoStyles.geoInline}>
@@ -306,14 +305,6 @@ export function ProjectLocationForm() {
           </div>
         )}
 
-        <div
-          ref={mapContainerRef}
-          className={geoStyles.mapWrap}
-          style={{ display: mapEnabled ? 'block' : 'none' }}
-          aria-hidden={!mapEnabled}
-          aria-label="Map — click or drag pin"
-        />
-
         {pending && hasPendingDiff && (
           <div className={geoStyles.pendingBanner}>
             <div className={geoStyles.pendingText}>
@@ -326,6 +317,20 @@ export function ProjectLocationForm() {
             </button>
           </div>
         )}
+      </div>
+
+      <TextInput
+        label="Street Address"
+        value={d.projectAddress}
+        onChange={(v) => update({ projectAddress: v })}
+        placeholder="123 Main St"
+        disabled={disabled}
+        required
+      />
+      <div className={styles.row3}>
+        <TextInput label="City" value={d.projectCity} onChange={(v) => update({ projectCity: v })} disabled={disabled} required />
+        <TextInput label="State" value={d.projectState} onChange={(v) => update({ projectState: v })} disabled={disabled} required />
+        <TextInput label="Zip" value={d.projectZip} onChange={(v) => update({ projectZip: v })} disabled={disabled} required />
       </div>
     </div>
   );

@@ -70,7 +70,7 @@ const appDemo: LinkItem[] = [
     description: 'Cost estimation with labor, materials, and margin analysis.',
   },
   {
-    label: 'Procurement',
+    label: 'Project Financials',
     href: '#/app/bom',
     description: 'Full BOM with quantities, part numbers, and vendor pricing.',
   },
