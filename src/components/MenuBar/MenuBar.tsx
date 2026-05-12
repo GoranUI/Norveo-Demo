@@ -64,7 +64,7 @@ export function MenuBar() {
     ],
     View: [
       { label: 'Configurator', action: () => dispatch({ type: 'SET_WORKSPACE', workspace: 'configurator' }) },
-      { label: 'Procurement', action: () => dispatch({ type: 'SET_WORKSPACE', workspace: 'bom' }) },
+      { label: 'Project Financials', action: () => dispatch({ type: 'SET_WORKSPACE', workspace: 'bom' }) },
       { label: 'divider', divider: true },
       { label: 'Reset Layout' },
     ],

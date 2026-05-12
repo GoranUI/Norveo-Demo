@@ -63,7 +63,7 @@ export function Login() {
             </div>
             <div className={styles.featureCard}>
               <ClipboardList size={16} aria-hidden="true" />
-              <span>Procurement queue</span>
+              <span>Project Financials queue</span>
             </div>
             <div className={styles.featureCard}>
               <ShieldCheck size={16} aria-hidden="true" />

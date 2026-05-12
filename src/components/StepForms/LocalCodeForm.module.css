@@ -134,3 +134,98 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Jurisdiction suggestion panel (demo rules) */
+.suggestedPanel {
+  margin: var(--sp-4) 0 var(--sp-5);
+  padding: var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg-input));
+}
+
+.suggestedHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--sp-2);
+  margin-bottom: var(--sp-2);
+}
+
+.suggestedTitle {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-bright);
+}
+
+.previewPill {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--text-muted) 16%, transparent);
+  color: var(--text-secondary);
+}
+
+.suggestedHint {
+  margin: 0 0 var(--sp-3);
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.suggestedList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+}
+
+.suggestedRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
+  background: var(--bg-panel);
+}
+
+.suggestedShort {
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.suggestedLabel {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  line-height: 1.35;
+}
+
+.adoptBtn {
+  flex-shrink: 0;
+  padding: 6px 12px;
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.adoptBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.adoptBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

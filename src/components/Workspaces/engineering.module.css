@@ -7,6 +7,36 @@
   flex-direction: column;
 }
 
+.engTabBar {
+  display: flex;
+  gap: 0;
+  padding: 0 var(--sp-4);
+  background: var(--bg-panel);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.engTab {
+  padding: var(--sp-2) var(--sp-4);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.engTab:hover {
+  color: var(--text-primary);
+}
+
+.engTabActive {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
 /* ── Top summary strip ── */
 .summaryStrip {
   display: flex;

@@ -1,4 +1,5 @@
 import { isReasonableEmail } from './utils/email';
+import { isDeckStepVisible, isDivingBoardStepVisible, secondarySanitationRequiredByCodes } from './utils/codeFeatures';
 
 // ── Workspaces (bottom tabs) ──
 export type Workspace =
@@ -162,7 +163,10 @@ export interface ProjectData {
   numDivingBoards: number;
   /** Per-board deep-area exclusion in sf. Brett spec default = 300. */
   divingBoardExclusionSf: number;
-  gutterStyle: string[];
+  /** When true, Deck / Diving Board steps stay visible even for pool types that normally hide them. */
+  deckDivingWizardOverride: boolean;
+  /** Single pool recirculation / gutter style (one family, one variant). */
+  gutterStyle: string | null;
   copingStyle: string | null;
   mechanicalKnowledge: string | null;
   /** @deprecated Use `brandPreferences` for per-system selection. Kept for migration. */
@@ -175,12 +179,18 @@ export interface ProjectData {
   selectedFilterModelId: string | null;
   /** Number of identical filter tanks installed in parallel. */
   filterCount: number;
+  /** Optional qty override keyed by catalogue model id while comparing rows. */
+  filterCatalogQtyByModelId: Record<string, number>;
   /** Override design surface flow rate (gpm/ft²). Null = use media+pool default. */
   filterDesignRateGpmPerSf: number | null;
   /** Override backwash velocity (gpm/ft²). Null = media default. */
   filterBackwashRateGpmPerSf: number | null;
   /** Sewer / discharge line capacity (gpm). */
   filterSewerCapacityGpm: number;
+  /** Nominal sewer pipe (inches) when sizing from line instead of capacity. */
+  filterSewerLineNominalIn: number | null;
+  /** Retention pit vs sewer vs not needed (2" floor drain demo default). */
+  retentionDisposalMode: 'retention' | 'sewer' | 'not-needed';
   /** Retention time used to size the retention pit (min). */
   filterRetentionTimeMin: number;
   /** Retention pit dimensions (ft). */
@@ -192,6 +202,8 @@ export interface ProjectData {
   chemicalControl: string | null;
   /** Optional secondary sanitation systems (multi-select: Ozone, UV). */
   secondarySanitation: string[];
+  /** User-facing on/off for secondary systems; `auto` follows `secondarySanitationRequiredByCodes`. */
+  secondarySanitationMode: 'auto' | 'on' | 'off';
   /** pH buffer system (single select). */
   phBuffer: string | null;
   heatingSystem: string[];
@@ -219,6 +231,20 @@ export interface ProjectData {
   tileBandHeight: string | null;
   customTileHeight: string;
   stairNosingDetail: string | null;
+  /** Waterline tile section (plaster / aggregate). Off for vinyl. */
+  waterlineTileEnabled: boolean;
+  waterlineBandInches: number | null;
+  waterlineTileSizeLabel: string | null;
+  waterlinePickMode: 'colors' | 'price-range' | 'unknown';
+  waterlinePriceTier: string | null;
+  /** Whole pool is tile — use same picker as waterline. */
+  allTilePool: boolean;
+  /** Copy waterline choices to full tile body. */
+  applyWaterlineTileToBody: boolean;
+  /** Finish brand / line (e.g. Pebble Tec line). */
+  finishBrand: string | null;
+  finishProductLine: string | null;
+  finishColorName: string | null;
   waterFeatures: string[];
   /** General pool features (auto-cover, slide, ADA lift, etc.). Multi-select. */
   poolFeatures: string[];
@@ -293,6 +319,8 @@ export interface AppState {
   selectedFileId: string | null;
   /** Company-wide reusable estimate / BOM line templates (localStorage). */
   companyCatalogTemplates: import('./data/companyCatalog').CompanyLineTemplate[];
+  /** Engineering: full-page equipment vs long calculations scroll. */
+  engineeringSubView: 'calculations' | 'equipment';
 }
 
 // ── Actions ──
@@ -308,6 +336,7 @@ export type AppAction =
    * the side drawer.
    */
   | { type: 'NAVIGATE_TO_STEP'; step: ConfigStep }
+  | { type: 'SET_ENGINEERING_SUB_VIEW'; view: 'calculations' | 'equipment' }
   | { type: 'TOGGLE_GROUP'; group: StepGroup }
   | { type: 'UPDATE_DATA'; payload: Partial<ProjectData> }
   | { type: 'TOGGLE_FINALIZE' }
@@ -409,6 +438,14 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     isComplete: (d) => !!d.projectType,
   },
   {
+    id: ConfigStep.PoolUseType,
+    label: 'Pool Use',
+    group: 'Project Information',
+    getValue: (d) => d.poolUseType || '',
+    isVisible: () => true,
+    isComplete: (d) => !!d.poolUseType,
+  },
+  {
     id: ConfigStep.LocalCodeAwareness,
     label: 'Code Awareness',
     group: 'Local Code',
@@ -462,7 +499,7 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     group: 'Pool Volumes',
     getValue: (d) => (d.deckSf > 0 ? `${d.deckSf.toLocaleString()} sf` : ''),
     isVisible: () => true,
-    isComplete: (d) => d.deckSf > 0,
+    isComplete: (d) => !isDeckStepVisible(d) || d.deckSf > 0,
   },
   {
     id: ConfigStep.DivingBoard,
@@ -471,24 +508,15 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     getValue: (d) => `${d.numDivingBoards} ${d.numDivingBoards === 1 ? 'board' : 'boards'}`,
     isVisible: () => true,
     /** 0 boards is a valid answer; the field is always considered complete once acknowledged. */
-    isComplete: (d) => d.numDivingBoards >= 0,
-  },
-  {
-    id: ConfigStep.PoolUseType,
-    label: 'Pool Use',
-    group: 'Pool Design',
-    getValue: (d) => d.poolUseType || '',
-    isVisible: () => true,
-    isComplete: (d) => !!d.poolUseType,
+    isComplete: (d) => !isDivingBoardStepVisible(d) || d.numDivingBoards >= 0,
   },
   {
     id: ConfigStep.GutterStyle,
     label: 'Pool Recirculation',
     group: 'Pool Design',
     getValue: (d) => {
-      const values = d.gutterStyle;
-      if (!values.length) return '';
-      // Inline lookup to avoid circular import. Falls back to raw value.
+      const v = d.gutterStyle;
+      if (!v) return '';
       const map: Record<string, string> = {
         'skimmer-12-coping': 'Skimmer · 12" coping',
         'skimmer-18-coping': 'Skimmer · 18" coping',
@@ -502,10 +530,10 @@ export const STEP_DEFINITIONS: StepMeta[] = [
         'concrete-rollout-parapet': 'Concrete · rollout w/ parapet',
         'concrete-fully-recessed': 'Concrete · fully recessed',
       };
-      return truncate(values.map((v) => map[v] ?? v).join(', '));
+      return truncate(map[v] ?? v);
     },
     isVisible: () => true,
-    isComplete: (d) => d.gutterStyle.length > 0,
+    isComplete: (d) => !!d.gutterStyle,
   },
   {
     id: ConfigStep.CopingStyle,
@@ -533,6 +561,20 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     getValue: (d) => d.mechanicalPriorities.length ? d.mechanicalPriorities.join(', ') : '',
     isVisible: (d) => d.mechanicalKnowledge === 'help',
     isComplete: (d) => d.mechanicalPriorities.length > 0,
+  },
+  {
+    id: ConfigStep.MechanicalBrand,
+    label: 'Equipment brands',
+    group: 'Mechanical Systems',
+    getValue: (d) => {
+      const prefs = d.brandPreferences;
+      const parts = (['pump', 'filtration', 'heating'] as const)
+        .map((k) => prefs[k])
+        .filter(Boolean) as string[];
+      return parts.length ? truncate(parts.join(', ')) : '';
+    },
+    isVisible: () => true,
+    isComplete: () => true,
   },
   {
     id: ConfigStep.Filtration,
@@ -571,8 +613,13 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     group: 'Mechanical Systems',
     getValue: (d) => (d.secondarySanitation.length ? d.secondarySanitation.join(', ') : ''),
     isVisible: () => true,
-    /** Optional system — empty array is a valid "no secondary" answer. */
-    isComplete: () => true,
+    isComplete: (d) => {
+      const mode = d.secondarySanitationMode ?? 'auto';
+      const req = secondarySanitationRequiredByCodes(d);
+      const show = mode === 'on' || (mode === 'auto' && req);
+      if (mode === 'off' || (mode === 'auto' && !req)) return true;
+      return show && d.secondarySanitation.length > 0;
+    },
   },
   {
     id: ConfigStep.PhBuffer,
@@ -757,7 +804,7 @@ export const WORKSPACE_LABELS: Record<Workspace, string> = {
   configurator: 'Configurator',
   engineering: 'Engineering',
   design: 'Design',
-  bom: 'Procurement',
+  bom: 'Project Financials',
   catalog: 'Additional costs',
   estimate: 'Estimate',
   deliverables: 'Deliverables',

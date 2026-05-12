@@ -1,5 +1,6 @@
 import { CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../store';
+import { isDivingBoardStepVisible } from '../../utils/codeFeatures';
 import formStyles from './forms.module.css';
 import styles from './DeckForm.module.css';
 
@@ -29,6 +30,42 @@ export function DivingBoardForm() {
     });
 
   const totalExclusion = d.numDivingBoards * d.divingBoardExclusionSf;
+  const showInputs = isDivingBoardStepVisible(d);
+
+  if (!showInputs) {
+    return (
+      <div className={formStyles.form}>
+        <div className={styles.titleRow}>
+          <h2 className={formStyles.formTitle}>Diving Board</h2>
+        </div>
+        <p className={formStyles.formDesc}>
+          Each board reduces usable deep-end area for bather-load purposes. Brett spec defaults to
+          300&nbsp;sf of exclusion per board; tune below if a local code differs.
+        </p>
+        <div className={styles.naPanel}>
+          <p className={styles.naTitle}>Not applicable for the selected pool class</p>
+          <p className={styles.naBody}>
+            Diving boards are usually omitted for spas, wading pools, leisure rivers, and similar
+            vessels. Enable the override if you still need to document boards or exclusions.
+          </p>
+          <div className={styles.naActions}>
+            <button
+              type="button"
+              className={styles.naBtn}
+              disabled={disabled}
+              onClick={() =>
+                dispatch({ type: 'UPDATE_DATA', payload: { deckDivingWizardOverride: true } })
+              }
+            >
+              Configure diving board anyway
+            </button>
+            <span className={styles.naGhost}>Also shows the Deck step when it was hidden.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const isComplete = d.numDivingBoards >= 0;
 
   return (

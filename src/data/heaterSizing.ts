@@ -34,7 +34,7 @@ export interface HeaterSizingResult {
   requiredBtuHr: number;
   /** Estimated surface heat loss in BTU/hr (ASHRAE-simplified). */
   surfaceLossBtuHr: number;
-  /** Total BTU/hr the heater must deliver (heat-up + surface loss). */
+  /** Total BTU/hr the heater must deliver (max of heat-up vs surface loss, before efficiency). */
   totalBtuHr: number;
 }
 
@@ -154,14 +154,15 @@ export function calculateHeaterSizing(inputs: HeaterSizingInputs): HeaterSizingR
   const midTemp = startTempF + deltaT / 2;
   const surfaceLossBtuHr = estimateSurfaceLoss(surfaceAreaSf, midTemp, ambientTempF, windMph, environment);
 
-  // Total output the heater must deliver, divided by efficiency.
-  const requiredBtuHr = Math.ceil((grossBtuHr + surfaceLossBtuHr) / efficiency);
+  // Required output: greater of heat-up load vs surface loss, divided by efficiency (not sum of both loads).
+  const requiredBtuHr = Math.ceil(Math.max(grossBtuHr, surfaceLossBtuHr) / efficiency);
 
   return {
     grossBtuHr: Math.round(grossBtuHr),
     surfaceLossBtuHr: Math.round(surfaceLossBtuHr),
     requiredBtuHr,
-    totalBtuHr: Math.round(grossBtuHr + surfaceLossBtuHr),
+  /** Total BTU/hr before efficiency — max of heat-up vs surface loss (not additive). */
+  totalBtuHr: Math.round(Math.max(grossBtuHr, surfaceLossBtuHr)),
   };
 }
 

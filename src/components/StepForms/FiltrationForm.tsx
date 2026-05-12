@@ -8,9 +8,7 @@ import {
 } from 'lucide-react';
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
-import { BrandSelect } from '../ui/BrandSelect';
 import { getOptionCost } from '../../data/configCosts';
-import { getBrandsForCategory } from '../../data/brands';
 import {
   FILTER_CATALOG,
   type FilterMediaType,
@@ -24,8 +22,15 @@ import {
 } from '../../data/filterSizing';
 import { calculateVolumeTotals } from '../../data/poolSections';
 import { getTurnoverHoursForPoolType } from '../../data/engineering';
+import {
+  capacityForNominalIn,
+  nominalInForCapacityGpm,
+  SEWER_NOMINAL_OPTIONS,
+} from '../../data/sewerLineSizing';
 import formStyles from './forms.module.css';
 import styles from './FiltrationForm.module.css';
+import { PriceRangeDual } from '../ui/PriceRangeDual';
+import { InfoHint } from '../ui/InfoHint';
 
 const MEDIA_OPTIONS = [
   { value: 'Sand', label: 'Sand' },
@@ -33,8 +38,6 @@ const MEDIA_OPTIONS = [
   { value: 'DE', label: 'Diatomaceous Earth (DE)' },
   { value: 'Glass Media', label: 'Glass Media' },
 ].map((o) => ({ ...o, cost: getOptionCost('filtrationType', o.value)?.cost }));
-
-const FILTRATION_BRANDS = getBrandsForCategory('filtration');
 
 function fmtNum(n: number, digits = 1): string {
   if (!Number.isFinite(n) || n === 0) return digits === 0 ? '0' : (0).toFixed(digits);
@@ -69,6 +72,7 @@ interface FiltrationCatalogueBlockProps {
   selectedFilterModelId: string | null;
   recirculationGpm: number;
   designRate: number;
+  filterAreaRequiredSf: number;
   onSelect: (f: FilterProduct) => void;
 }
 
@@ -80,8 +84,12 @@ function FiltrationCatalogueBlock({
   selectedFilterModelId,
   recirculationGpm,
   designRate,
+  filterAreaRequiredSf,
   onSelect,
 }: FiltrationCatalogueBlockProps) {
+  const { state, dispatch } = useApp();
+  const qtyById = state.data.filterCatalogQtyByModelId ?? {};
+
   const priceBounds = useMemo(() => {
     if (!baseCatalogueRows.length) return { min: 0, max: 0 };
     const prices = baseCatalogueRows.map((r) => r.price);
@@ -95,7 +103,8 @@ function FiltrationCatalogueBlock({
 
   const [priceFloor, setPriceFloor] = useState<number | ''>('');
   const [priceCeil, setPriceCeil] = useState<number | ''>('');
-  const [brandFilter, setBrandFilter] = useState<string[]>([]);
+  const [brandPick, setBrandPick] = useState<string>('');
+  const [minTanks, setMinTanks] = useState(1);
   const [meetsFilter, setMeetsFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [sortKey, setSortKey] = useState<'area' | 'price' | 'brand'>('area');
 
@@ -103,9 +112,17 @@ function FiltrationCatalogueBlock({
     let rows = [...baseCatalogueRows];
     if (priceFloor !== '') rows = rows.filter((r) => r.price >= priceFloor);
     if (priceCeil !== '') rows = rows.filter((r) => r.price <= priceCeil);
-    if (brandFilter.length) rows = rows.filter((r) => brandFilter.includes(r.brand));
+    if (brandPick) rows = rows.filter((r) => r.brand === brandPick);
+    if (minTanks > 1) {
+      rows = rows.filter((f) => {
+        const need =
+          filterAreaRequiredSf > 0 ? Math.ceil(filterAreaRequiredSf / f.filterAreaSqFt) : 1;
+        return need >= minTanks;
+      });
+    }
     rows = rows.filter((f) => {
-      const totalArea = f.filterAreaSqFt * Math.max(1, filterCount);
+      const rowQty = qtyById[f.id] ?? filterCount;
+      const totalArea = f.filterAreaSqFt * Math.max(1, rowQty);
       const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
       const meetsDesign = totalArea > 0 && rate <= designRate;
       if (meetsFilter === 'yes') return meetsDesign;
@@ -122,10 +139,13 @@ function FiltrationCatalogueBlock({
     baseCatalogueRows,
     priceFloor,
     priceCeil,
-    brandFilter,
+    brandPick,
+    minTanks,
+    filterAreaRequiredSf,
     meetsFilter,
     sortKey,
     filterCount,
+    qtyById,
     recirculationGpm,
     designRate,
   ]);
@@ -133,14 +153,16 @@ function FiltrationCatalogueBlock({
   const filtersDirty =
     priceFloor !== '' ||
     priceCeil !== '' ||
-    brandFilter.length > 0 ||
+    brandPick !== '' ||
+    minTanks > 1 ||
     meetsFilter !== 'all' ||
     sortKey !== 'area';
 
   const clearToolbarFilters = () => {
     setPriceFloor('');
     setPriceCeil('');
-    setBrandFilter([]);
+    setBrandPick('');
+    setMinTanks(1);
     setMeetsFilter('all');
     setSortKey('area');
   };
@@ -166,39 +188,35 @@ function FiltrationCatalogueBlock({
           )}
         </div>
         <div className={styles.catToolbarRow}>
-          <div className={styles.catField}>
-            <span className={styles.catFieldLabel}>Price min</span>
-            <input
-              type="number"
-              className={styles.catInput}
-              min={0}
-              step={50}
-              placeholder={priceBounds.min ? String(priceBounds.min) : '—'}
-              value={priceFloor === '' ? '' : priceFloor}
-              onChange={(e) => {
-                const v = e.target.value;
-                setPriceFloor(v === '' ? '' : Number(v));
-              }}
-              disabled={disabled}
-              aria-label="Minimum price"
-            />
+          <div className={styles.catFieldWide}>
+            <span className={styles.catFieldLabel}>Price range ($)</span>
+            {priceBounds.max > priceBounds.min ? (
+              <PriceRangeDual
+                minBound={priceBounds.min}
+                maxBound={priceBounds.max}
+                floor={priceFloor}
+                ceil={priceCeil}
+                onFloor={setPriceFloor}
+                onCeil={setPriceCeil}
+                disabled={disabled}
+              />
+            ) : (
+              <span className={styles.toolbarMetaBadge}>Single price in catalogue</span>
+            )}
           </div>
           <div className={styles.catField}>
-            <span className={styles.catFieldLabel}>Price max</span>
-            <input
-              type="number"
-              className={styles.catInput}
-              min={0}
-              step={50}
-              placeholder={priceBounds.max ? String(priceBounds.max) : '—'}
-              value={priceCeil === '' ? '' : priceCeil}
-              onChange={(e) => {
-                const v = e.target.value;
-                setPriceCeil(v === '' ? '' : Number(v));
-              }}
+            <span className={styles.catFieldLabel}>Min tanks (scenario)</span>
+            <select
+              className={styles.catSelect}
+              value={minTanks}
+              onChange={(e) => setMinTanks(Number(e.target.value))}
               disabled={disabled}
-              aria-label="Maximum price"
-            />
+              aria-label="Minimum number of filter tanks"
+            >
+              <option value={1}>Any</option>
+              <option value={2}>2+</option>
+              <option value={3}>3+</option>
+            </select>
           </div>
           <div className={styles.catField}>
             <span className={styles.catFieldLabel}>Meets design rate</span>
@@ -231,27 +249,21 @@ function FiltrationCatalogueBlock({
         </div>
         {brandsInCatalogue.length > 1 && (
           <div className={styles.catField}>
-            <span className={styles.catFieldLabel}>Brands (multi-select)</span>
-            <div className={styles.brandChips}>
-              {brandsInCatalogue.map((b) => {
-                const on = brandFilter.includes(b);
-                return (
-                  <label key={b} className={styles.catBrandToggle}>
-                    <input
-                      type="checkbox"
-                      checked={on}
-                      disabled={disabled}
-                      onChange={() => {
-                        setBrandFilter((prev) =>
-                          on ? prev.filter((x) => x !== b) : [...prev, b],
-                        );
-                      }}
-                    />
-                    <span>{b}</span>
-                  </label>
-                );
-              })}
-            </div>
+            <span className={styles.catFieldLabel}>Brand</span>
+            <select
+              className={styles.catSelect}
+              value={brandPick}
+              onChange={(e) => setBrandPick(e.target.value)}
+              disabled={disabled}
+              aria-label="Filter by brand"
+            >
+              <option value="">All brands</option>
+              {brandsInCatalogue.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
           </div>
         )}
         <div className={styles.toolbarMeta}>
@@ -268,7 +280,7 @@ function FiltrationCatalogueBlock({
       {displayedCatalogueRows.length === 0 ? (
         <div className={styles.catTablePane}>
           <div className={styles.emptyState}>
-            No models match the current filters. Widen the price range or clear brand checkboxes.
+            No models match the current filters. Widen the price range or clear filters.
           </div>
         </div>
       ) : (
@@ -277,48 +289,85 @@ function FiltrationCatalogueBlock({
           <div className={styles.compHead} role="row">
             <div role="columnheader" className={styles.compHeadRadio} aria-label="Selection" />
             <div role="columnheader">Model</div>
+            <div role="columnheader" className={styles.compHeadRight}>Qty</div>
             <div role="columnheader" className={styles.compHeadRight}>Per-tank ft²</div>
             <div role="columnheader" className={styles.compHeadRight}>Total ft²</div>
             <div role="columnheader" className={styles.compHeadRight}>Rate gpm/ft²</div>
           </div>
           {displayedCatalogueRows.map((f) => {
             const isSelected = selectedFilterModelId === f.id;
-            const totalArea = f.filterAreaSqFt * Math.max(1, filterCount);
+            const rowQty = qtyById[f.id] ?? filterCount;
+            const totalArea = f.filterAreaSqFt * Math.max(1, rowQty);
             const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
             const meetsDesign = totalArea > 0 && rate <= designRate;
             return (
-              <button
+              <div
                 key={f.id}
-                type="button"
                 role="row"
                 className={`${styles.compRow} ${meetsDesign ? styles.compRowMeets : styles.compRowOver} ${isSelected ? styles.compRowSelected : ''}`}
-                onClick={() => onSelect(f)}
-                disabled={disabled}
-                aria-pressed={isSelected}
-                aria-label={`${f.brand} ${f.model}, ${fmtNum(f.filterAreaSqFt, 1)} square feet per tank${isSelected ? ', selected' : ''}`}
               >
-                <div className={styles.compSelectCell} role="cell">
-                  <span className={styles.compRadio} aria-hidden="true">
-                    {isSelected && <span className={styles.compRadioInner} />}
-                  </span>
+                <button
+                  type="button"
+                  className={styles.compRowMainBtn}
+                  onClick={() => onSelect(f)}
+                  disabled={disabled}
+                  aria-pressed={isSelected}
+                  aria-label={`Select ${f.brand} ${f.model}`}
+                >
+                  <div className={styles.compSelectCell} role="cell">
+                    <span className={styles.compRadio} aria-hidden="true">
+                      {isSelected && <span className={styles.compRadioInner} />}
+                    </span>
+                  </div>
+                  <div className={styles.compCell} role="cell">
+                    <span className={styles.compModelBrand}>{f.brand}</span>
+                    {f.model}
+                  </div>
+                </button>
+                <div
+                  className={`${styles.compCell} ${styles.compCellRight} ${styles.compQtyCell}`}
+                  role="cell"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    className={styles.compQtyInput}
+                    value={rowQty}
+                    disabled={disabled}
+                    aria-label={`Quantity for ${f.model}`}
+                    onChange={(e) => {
+                      const n = Math.max(1, Math.min(12, parseInt(e.target.value, 10) || 1));
+                      dispatch({
+                        type: 'UPDATE_DATA',
+                        payload: {
+                          filterCatalogQtyByModelId: { ...qtyById, [f.id]: n },
+                          ...(isSelected ? { filterCount: n } : {}),
+                        },
+                      });
+                    }}
+                  />
                 </div>
-                <div className={styles.compCell} role="cell">
-                  <span className={styles.compModelBrand}>{f.brand}</span>
-                  {f.model}
-                </div>
-                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
+                <div
+                  className={`${styles.compCell} ${styles.compCellRight} ${styles.compMetricPer}`}
+                  role="cell"
+                >
                   {fmtNum(f.filterAreaSqFt, 2)}
                 </div>
-                <div className={`${styles.compCell} ${styles.compCellRight}`} role="cell">
+                <div
+                  className={`${styles.compCell} ${styles.compCellRight} ${styles.compMetricTotal}`}
+                  role="cell"
+                >
                   {fmtNum(totalArea, 2)}
                 </div>
                 <div
-                  className={`${styles.compCell} ${styles.compCellRight} ${meetsDesign ? '' : styles.compMuted}`}
+                  className={`${styles.compCell} ${styles.compCellRight} ${styles.compMetricRate} ${meetsDesign ? '' : styles.compMuted}`}
                   role="cell"
                 >
                   {totalArea > 0 ? fmtNum(rate, 2) : '—'}
                 </div>
-              </button>
+              </div>
             );
           })}
           </div>
@@ -361,6 +410,10 @@ export function FiltrationForm() {
   const update = (payload: Record<string, unknown>) =>
     dispatch({ type: 'UPDATE_DATA', payload });
 
+  const disposalMode = d.retentionDisposalMode ?? 'retention';
+  const sewerNominalIn =
+    d.filterSewerLineNominalIn ?? nominalInForCapacityGpm(d.filterSewerCapacityGpm);
+
   const totals = useMemo(() => calculateVolumeTotals(d.poolSections), [d.poolSections]);
   const turnoverHours =
     d.turnoverHoursOverride ?? getTurnoverHoursForPoolType(d.poolUseType, totals.averageDepth);
@@ -370,15 +423,13 @@ export function FiltrationForm() {
   );
 
   const mediaType = (d.filtrationType as FilterMediaType | null) ?? null;
-  const brand = d.brandPreferences.filtration;
 
-  // Catalogue rows for the chosen media (and optional preferred brand).
+  // Catalogue rows for the chosen media (brand is filtered in the table toolbar).
   const baseCatalogueRows = useMemo(() => {
     let rows: FilterProduct[] = FILTER_CATALOG;
     if (mediaType) rows = rows.filter((f) => f.mediaType === mediaType);
-    if (brand) rows = rows.filter((f) => f.brand === brand);
     return rows;
-  }, [mediaType, brand]);
+  }, [mediaType]);
 
   const selectedFilter = useMemo(
     () => FILTER_CATALOG.find((f) => f.id === d.selectedFilterModelId) ?? null,
@@ -427,12 +478,15 @@ export function FiltrationForm() {
   const isComplete = !!d.filtrationType && !!d.selectedFilterModelId && d.filterCount > 0;
 
   const handleSelectFilter = (f: FilterProduct) => {
-    const recommended = sizing.filterAreaRequiredSf > 0
-      ? Math.max(1, Math.ceil(sizing.filterAreaRequiredSf / f.filterAreaSqFt))
-      : Math.max(1, d.filterCount);
+    const recommended =
+      sizing.filterAreaRequiredSf > 0
+        ? Math.max(1, Math.ceil(sizing.filterAreaRequiredSf / f.filterAreaSqFt))
+        : Math.max(1, d.filterCount);
+    const prev = d.filterCatalogQtyByModelId ?? {};
     update({
       selectedFilterModelId: f.id,
       filterCount: recommended,
+      filterCatalogQtyByModelId: { ...prev, [f.id]: recommended },
     });
   };
 
@@ -449,31 +503,14 @@ export function FiltrationForm() {
       </div>
 
       <p className={formStyles.formDesc}>
-        Pick a media type, then select a filter tank model. The catalogue is
-        filtered by your media (and brand preference, if any). The recirculation
-        rate from the volume + turnover calc is used to size required area, and
-        we surface backwash flow plus retention pit dimensions for your sewer
-        capacity.
+        Pick a media type, then select a filter tank model. The catalogue is filtered by
+        media; use the table toolbar to narrow by price, brand, and design rate. The
+        recirculation rate from the volume + turnover calc is used to size required area,
+        and we surface backwash flow plus retention pit dimensions for your sewer capacity.
       </p>
 
-      {/* ── Filtration Type & Brand ── */}
-      <div className={styles.sectionLabel}>Filtration Type — Preferred Brand</div>
-      <BrandSelect
-        label=""
-        brands={FILTRATION_BRANDS}
-        value={brand}
-        onChange={(v) =>
-          update({
-            brandPreferences: { ...d.brandPreferences, filtration: v },
-            // Clear the selected model if it's no longer in the brand-filtered list.
-            selectedFilterModelId:
-              v && selectedFilter && selectedFilter.brand !== v
-                ? null
-                : d.selectedFilterModelId,
-          })
-        }
-        disabled={disabled}
-      />
+      {/* ── Filtration Type ── */}
+      <div className={styles.sectionLabel}>Filtration Type</div>
       <OptionButton
         label="Filter Type"
         options={MEDIA_OPTIONS}
@@ -494,6 +531,10 @@ export function FiltrationForm() {
       <div className={styles.sectionLabel}>
         <FilterIcon size={13} aria-hidden="true" style={{ verticalAlign: '-2px' }} />{' '}
         Sizing — Required Filter Area
+        <InfoHint
+          contextLabel="Required filter area"
+          text="Required area is recirculation GPM divided by your design surface rate. Green rows in the catalogue meet that rate for the tank quantity you enter."
+        />
       </div>
       <p className={styles.hint}>
         Recirculation rate comes from your volume + turnover. The design rate
@@ -536,33 +577,42 @@ export function FiltrationForm() {
           unit="tanks"
           step={1}
           disabled={disabled}
-          onChange={(v) => update({ filterCount: Math.max(1, Math.floor(v)) })}
+          onChange={(v) => {
+            const n = Math.max(1, Math.floor(v));
+            const prev = d.filterCatalogQtyByModelId ?? {};
+            const payload: Record<string, unknown> = { filterCount: n };
+            if (d.selectedFilterModelId) {
+              payload.filterCatalogQtyByModelId = { ...prev, [d.selectedFilterModelId]: n };
+            }
+            update(payload);
+          }}
         />
       </div>
 
       {/* ── Filter Selection (catalogue table) ── */}
       <div className={styles.sectionLabel}>Filter Selection</div>
       <p className={styles.hint}>
-        Choose a filter tank. Each row shows total area for the selected count
-        and the resulting surface flow rate. Rows that meet your design rate
+        Choose a filter tank. Each row shows total area for the tank quantity
+        (override per model) and the resulting surface flow rate. Rows that meet your design rate
         are marked with a green bar.
       </p>
 
       {baseCatalogueRows.length === 0 ? (
         <div className={styles.emptyState}>
-          {brand
-            ? `No ${mediaType ?? 'filter'} models from ${brand} in the catalogue. Clear the brand preference or switch media to see options.`
+          {mediaType
+            ? `No ${mediaType} models in the catalogue.`
             : 'No filter models in the catalogue match the current media. Pick a media type first.'}
         </div>
       ) : (
         <FiltrationCatalogueBlock
-          key={`${mediaType ?? 'none'}|${brand ?? 'any'}`}
+          key={mediaType ?? 'none'}
           baseCatalogueRows={baseCatalogueRows}
           disabled={disabled}
           filterCount={d.filterCount}
           selectedFilterModelId={d.selectedFilterModelId}
           recirculationGpm={recirculationGpm}
           designRate={designRate}
+          filterAreaRequiredSf={sizing.filterAreaRequiredSf}
           onSelect={handleSelectFilter}
         />
       )}
@@ -605,10 +655,39 @@ export function FiltrationForm() {
         Backwash &amp; Sewer
       </div>
       <p className={styles.hint}>
-        Backwash flow per tank is the worst-case discharge during a single
-        filter's cleaning cycle. The retention pit absorbs the difference when
+        Backwash flow per tank is the worst-case discharge during a single filter&apos;s cleaning
+        cycle. Pick how discharge is handled; the retention pit absorbs the difference when
         backwash exceeds sewer capacity.
       </p>
+
+      <OptionButton
+        label="Discharge strategy"
+        options={[
+          { value: 'retention', label: 'Retention pit' },
+          { value: 'sewer', label: 'Sewer connection' },
+          { value: 'not-needed', label: 'Not needed (2″ floor drain)' },
+        ]}
+        value={disposalMode}
+        onChange={(v) => {
+          const mode = v as 'retention' | 'sewer' | 'not-needed';
+          const payload: Record<string, unknown> = { retentionDisposalMode: mode };
+          if (mode === 'not-needed') {
+            payload.filterSewerLineNominalIn = 2;
+            payload.filterSewerCapacityGpm = capacityForNominalIn(2);
+          }
+          update(payload);
+        }}
+        disabled={disabled}
+      />
+
+      {disposalMode === 'not-needed' && (
+        <p className={styles.hint}>
+          Demo default: route to a <strong>2″ gravity floor drain</strong> when no engineered
+          retention or sewer tie-in is required. Add a line in <strong>Additional costs</strong>{' '}
+          if you want it on the BOM.
+        </p>
+      )}
+
       <div className={styles.fieldGrid}>
         <NumField
           label="Backwash rate"
@@ -625,81 +704,119 @@ export function FiltrationForm() {
           }
         />
         <NumField
-          label="Sewer capacity"
+          label="Sewer capacity (paired)"
           value={d.filterSewerCapacityGpm}
           unit="gpm"
           step={5}
-          disabled={disabled}
-          onChange={(v) => update({ filterSewerCapacityGpm: Math.max(0, v) })}
+          disabled={disabled || disposalMode === 'not-needed'}
+          onChange={(v) => {
+            const gpm = Math.max(0, v);
+            update({
+              filterSewerCapacityGpm: gpm,
+              filterSewerLineNominalIn: nominalInForCapacityGpm(gpm),
+            });
+          }}
         />
+        <label className={styles.field}>
+          <span className={styles.fieldLabel}>Sewer line (nominal)</span>
+          <select
+            className={styles.catSelect}
+            value={sewerNominalIn}
+            disabled={disabled || disposalMode === 'not-needed'}
+            aria-label="Sewer line nominal size in inches"
+            onChange={(e) => {
+              const inches = Number(e.target.value);
+              update({
+                filterSewerLineNominalIn: inches,
+                filterSewerCapacityGpm: capacityForNominalIn(inches),
+              });
+            }}
+          >
+            {SEWER_NOMINAL_OPTIONS.map((n) => (
+              <option key={n} value={n}>
+                {n}″ ({capacityForNominalIn(n)} gpm demo cap)
+              </option>
+            ))}
+          </select>
+        </label>
         <div className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Backwash flow / tank</div>
+          <div className={styles.summaryLabel}>Backwash flow / tank (calc)</div>
           <div className={styles.summaryValue}>
             {fmtNum(sizing.backwashFlowPerFilterGpm, 0)} gpm
           </div>
         </div>
+        {selectedFilter && selectedFilter.backwashGpm > 0 && (
+          <div className={styles.summaryCard}>
+            <div className={styles.summaryLabel}>Catalog backwash (model)</div>
+            <div className={styles.summaryValue}>{fmtNum(selectedFilter.backwashGpm, 0)} gpm</div>
+          </div>
+        )}
         <NumField
           label="Retention time"
           value={d.filterRetentionTimeMin}
           unit="min"
           step={0.5}
-          disabled={disabled}
+          disabled={disabled || disposalMode === 'not-needed'}
           onChange={(v) => update({ filterRetentionTimeMin: Math.max(0, v) })}
         />
       </div>
 
-      {/* ── Retention Pit ── */}
-      <div className={styles.sectionLabel}>Retention Pit</div>
-      <p className={styles.hint}>
-        Sized to absorb a single backwash event when the sewer can't take the
-        full flow. Length × Width × Depth × 7.4805 gal/ft³.
-      </p>
-      <div className={styles.fieldGrid3}>
-        <NumField
-          label="Length"
-          value={d.filterRetentionPitLengthFt}
-          unit="ft"
-          step={0.5}
-          disabled={disabled}
-          onChange={(v) => update({ filterRetentionPitLengthFt: Math.max(0, v) })}
-        />
-        <NumField
-          label="Width"
-          value={d.filterRetentionPitWidthFt}
-          unit="ft"
-          step={0.5}
-          disabled={disabled}
-          onChange={(v) => update({ filterRetentionPitWidthFt: Math.max(0, v) })}
-        />
-        <NumField
-          label="Depth"
-          value={d.filterRetentionPitDepthFt}
-          unit="ft"
-          step={0.5}
-          disabled={disabled}
-          onChange={(v) => update({ filterRetentionPitDepthFt: Math.max(0, v) })}
-        />
-      </div>
-      <div className={styles.summaryStrip2} style={{ marginTop: 'var(--sp-3)' }}>
-        <div className={styles.summaryCard}>
-          <div className={styles.summaryLabel}>Required capacity</div>
-          <div className={styles.summaryValue}>{fmtGallons(sizing.retentionRequiredGallons)}</div>
-        </div>
-        <div
-          className={`${styles.summaryCard} ${
-            sizing.retentionMeetsRequirement ? styles.summaryCardAccent : styles.summaryCardWarn
-          }`}
-        >
-          <div className={styles.summaryLabel}>Actual pit capacity</div>
-          <div className={styles.summaryValue}>{fmtGallons(sizing.retentionActualGallons)}</div>
-        </div>
-      </div>
-      {!sizing.retentionMeetsRequirement && sizing.retentionRequiredGallons > 0 && (
-        <p className={styles.hint}>
-          Pit is {fmtGallons(sizing.retentionRequiredGallons - sizing.retentionActualGallons)}{' '}
-          short of the required capacity. Increase L / W / D or shorten the
-          retention time.
-        </p>
+      {disposalMode !== 'not-needed' && (
+        <>
+          {/* ── Retention Pit ── */}
+          <div className={styles.sectionLabel}>Retention Pit</div>
+          <p className={styles.hint}>
+            {disposalMode === 'sewer'
+              ? 'Sized to absorb a single backwash spike when the sewer lateral is smaller than peak flow.'
+              : 'Sized to absorb a single backwash event when the sewer can’t take the full flow. Length × Width × Depth × 7.4805 gal/ft³.'}
+          </p>
+          <div className={styles.fieldGrid3}>
+            <NumField
+              label="Length"
+              value={d.filterRetentionPitLengthFt}
+              unit="ft"
+              step={0.5}
+              disabled={disabled}
+              onChange={(v) => update({ filterRetentionPitLengthFt: Math.max(0, v) })}
+            />
+            <NumField
+              label="Width"
+              value={d.filterRetentionPitWidthFt}
+              unit="ft"
+              step={0.5}
+              disabled={disabled}
+              onChange={(v) => update({ filterRetentionPitWidthFt: Math.max(0, v) })}
+            />
+            <NumField
+              label="Depth"
+              value={d.filterRetentionPitDepthFt}
+              unit="ft"
+              step={0.5}
+              disabled={disabled}
+              onChange={(v) => update({ filterRetentionPitDepthFt: Math.max(0, v) })}
+            />
+          </div>
+          <div className={styles.summaryStrip2} style={{ marginTop: 'var(--sp-3)' }}>
+            <div className={styles.summaryCard}>
+              <div className={styles.summaryLabel}>Required capacity</div>
+              <div className={styles.summaryValue}>{fmtGallons(sizing.retentionRequiredGallons)}</div>
+            </div>
+            <div
+              className={`${styles.summaryCard} ${
+                sizing.retentionMeetsRequirement ? styles.summaryCardAccent : styles.summaryCardWarn
+              }`}
+            >
+              <div className={styles.summaryLabel}>Actual pit capacity</div>
+              <div className={styles.summaryValue}>{fmtGallons(sizing.retentionActualGallons)}</div>
+            </div>
+          </div>
+          {!sizing.retentionMeetsRequirement && sizing.retentionRequiredGallons > 0 && (
+            <p className={styles.hint}>
+              Pit is {fmtGallons(sizing.retentionRequiredGallons - sizing.retentionActualGallons)}{' '}
+              short of the required capacity. Increase L / W / D or shorten the retention time.
+            </p>
+          )}
+        </>
       )}
     </div>
   );

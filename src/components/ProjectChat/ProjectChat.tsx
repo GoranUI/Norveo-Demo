@@ -127,7 +127,11 @@ const CONVERSATION_FLOW: ConversationStep[] = [
       { label: "Not sure — help me decide", value: UNSURE_VALUE },
     ],
     unsureResponse: (data) => {
-      if (data.gutterStyle.some((value) => ['concrete-deck-level', 'ss-deck-level', 'ss-deck-level-weirs'].includes(value))) {
+      const gs = data.gutterStyle;
+      const deckLevel =
+        gs &&
+        ['concrete-deck-level', 'ss-deck-level', 'ss-deck-level-weirs'].includes(gs);
+      if (deckLevel) {
         return {
           message: "With a deck-level or overflow gutter, **Grate** coping is the natural fit — it channels water into the gutter system. I'll set that for now.",
           suggestedValue: 'Grate',
@@ -324,7 +328,7 @@ function normalizeChatPayload(
         'Rim Flow': 'concrete-rollout',
         Skimmer: 'skimmer-12-coping',
       };
-      return { gutterStyle: [map[text] ?? text] };
+      return { gutterStyle: map[text] ?? text };
     }
     case 'copingStyle': {
       const map: Record<string, string> = {
@@ -404,7 +408,8 @@ export function ProjectChat() {
     if (filled.has('projectType')) labels.push(`**${state.data.projectType}** project`);
     if (filled.has('poolUseType')) labels.push(`**${state.data.poolUseType}** use`);
     if (filled.has('gutterStyle')) {
-      const recirculation = getRecirculationLabels(state.data.gutterStyle).join(', ') || state.data.gutterStyle.join(', ');
+      const recirculation =
+        getRecirculationLabels(state.data.gutterStyle).join(', ') || state.data.gutterStyle || '';
       labels.push(`**${recirculation}** recirculation`);
     }
     if (filled.has('filtrationType')) labels.push(`**${state.data.filtrationType}** filtration`);

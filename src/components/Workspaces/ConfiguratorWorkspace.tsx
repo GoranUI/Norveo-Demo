@@ -378,7 +378,28 @@ export function EngineeringWorkspace() {
         </span>
       </div>
 
-      <div className={styles.container}>
+      <div className={styles.engTabBar} role="tablist" aria-label="Engineering workspace">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.engineeringSubView === 'calculations'}
+          className={`${styles.engTab} ${state.engineeringSubView === 'calculations' ? styles.engTabActive : ''}`}
+          onClick={() => dispatch({ type: 'SET_ENGINEERING_SUB_VIEW', view: 'calculations' })}
+        >
+          Calculations
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={state.engineeringSubView === 'equipment'}
+          className={`${styles.engTab} ${state.engineeringSubView === 'equipment' ? styles.engTabActive : ''}`}
+          onClick={() => dispatch({ type: 'SET_ENGINEERING_SUB_VIEW', view: 'equipment' })}
+        >
+          Equipment
+        </button>
+      </div>
+
+      <div className={styles.container} hidden={state.engineeringSubView !== 'calculations'}>
         <Section title="Pool Specifications" status="ok" editStep={ConfigStep.PoolUseType}>
           <DataRow label="Dimensions" value="50' × 25'" tone="code" />
           <DataRow
@@ -398,8 +419,8 @@ export function EngineeringWorkspace() {
           <DataRow
             label="Pool Recirculation"
             value={getRecirculationLabels(d.gutterStyle).join(', ') || 'Not Specified'}
-            tone={d.gutterStyle.length > 0 ? 'selected' : 'default'}
-            isSelected={d.gutterStyle.length > 0}
+            tone={d.gutterStyle ? 'selected' : 'default'}
+            isSelected={!!d.gutterStyle}
             onClick={() => dispatch({ type: 'NAVIGATE_TO_STEP', step: ConfigStep.GutterStyle })}
           />
         </Section>
@@ -478,18 +499,11 @@ export function EngineeringWorkspace() {
           </div>
         </Section>
 
-        <Section title="Equipment Options" status={hasFilter ? 'ok' : 'warning'}>
-          <EquipmentOptionsPanel
-            designGpm={designGpm}
-            requiredBtuHr={heaterSizing.requiredBtuHr}
-          />
-        </Section>
-
         <Section title="Heater Sizing" status={hasHeating ? 'ok' : 'warning'} editStep={ConfigStep.Heating}>
           <div className={styles.eqGroup}>
             <div className={styles.eqGroupLabel}>Assumptions</div>
             <DataRow label="Environment" value={d.poolEnvironment === 'indoor' ? 'Indoor' : 'Outdoor'} tone="selected"
-              onClick={() => dispatch({ type: 'NAVIGATE_TO_STEP', step: ConfigStep.Heating })} isSelected />
+              onClick={() => dispatch({ type: 'NAVIGATE_TO_STEP', step: ConfigStep.ProjectType })} isSelected />
             <DataRow label="Scenario" value={d.heaterScenario === 'coldest-month' ? 'Coldest Month' : 'Shoulder Season'} tone="selected"
               onClick={() => dispatch({ type: 'NAVIGATE_TO_STEP', step: ConfigStep.Heating })} isSelected />
             <DataRow label="Target Water Temp" value={`${d.heaterTargetWaterTempF}°F`} tone="adjustable" />
@@ -523,7 +537,7 @@ export function EngineeringWorkspace() {
             ))}
           </div>
           <Note>
-            <strong>Heater sizing:</strong> Based on heat-up load ({d.heaterHeatUpDays}-day target, {d.heaterStartWaterTempF}°F → {d.heaterTargetWaterTempF}°F) plus estimated surface loss at {d.heaterAmbientTempF}°F ambient. Click a heater row to select it, or adjust assumptions in the configurator.
+            <strong>Heater sizing:</strong> Based on heat-up load ({d.heaterHeatUpDays}-day target, {d.heaterStartWaterTempF}°F → {d.heaterTargetWaterTempF}°F) and surface loss at {d.heaterAmbientTempF}°F ambient. Required output uses the <strong>greater</strong> of heat-up vs surface loss (not added together), then divided by efficiency. Click a heater row to select it, or adjust assumptions in the configurator.
           </Note>
         </Section>
 
@@ -577,6 +591,15 @@ export function EngineeringWorkspace() {
           <DataRow label="GPM per skimmer (est.)" value={`~${gpmPerSkimmer} GPM`} tone="calculated" />
           <DataRow label="GPM per main drain (est.)" value={`~${gpmPerMainDrain} GPM`} tone="calculated" />
           <DataRow label="Water feature flow" value="—" />
+        </Section>
+      </div>
+
+      <div className={styles.container} hidden={state.engineeringSubView !== 'equipment'}>
+        <Section title="Equipment Options" status={hasFilter ? 'ok' : 'warning'}>
+          <EquipmentOptionsPanel
+            designGpm={designGpm}
+            requiredBtuHr={heaterSizing.requiredBtuHr}
+          />
         </Section>
       </div>
     </div>

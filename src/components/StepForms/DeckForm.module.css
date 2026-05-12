@@ -180,6 +180,65 @@
   color: var(--text-muted);
 }
 
+/* Not applicable — pool class / codes hide this step until user overrides. */
+.naPanel {
+  margin-top: var(--sp-4);
+  padding: var(--sp-4);
+  border-radius: var(--radius-sm);
+  border: 1px dashed var(--border);
+  background: color-mix(in srgb, var(--bg-panel) 14%, var(--bg-input));
+}
+
+.naTitle {
+  font-size: var(--fs-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 var(--sp-2);
+}
+
+.naBody {
+  font-size: var(--fs-sm);
+  color: var(--text-secondary);
+  line-height: 1.55;
+  margin: 0 0 var(--sp-3);
+}
+
+.naActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  align-items: center;
+}
+
+.naBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  font-size: var(--fs-sm);
+  font-weight: 500;
+  font-family: inherit;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text-primary);
+  cursor: pointer;
+}
+
+.naBtn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+.naBtn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.naGhost {
+  font-size: var(--fs-xs);
+  color: var(--text-muted);
+}
+
 /* Responsive — collapse the totals + field grids on narrow drawers. */
 @media (max-width: 720px) {
   .totals,

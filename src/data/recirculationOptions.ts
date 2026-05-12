@@ -116,8 +116,10 @@ export function toggleFamily(current: string[], family: string, defaultVariant: 
   return [...current, defaultVariant];
 }
 
-export function getRecirculationLabels(values: string[]): string[] {
-  return values.map((value) => getRecirculationLabel(value)).filter(Boolean);
+export function getRecirculationLabels(values: string | string[] | null | undefined): string[] {
+  if (values == null) return [];
+  const arr = Array.isArray(values) ? values : [values];
+  return arr.filter(Boolean).map((value) => getRecirculationLabel(value)).filter(Boolean);
 }
 
 /** Map a stored value to a friendly display label including its family. */
