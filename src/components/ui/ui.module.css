@@ -484,13 +484,11 @@
   cursor: not-allowed;
 }
 
-/* Tooltip: show when hovering the control or when the button has focus (keyboard / tap). */
+/* Tooltip: portal-rendered, position: fixed, coordinates set by JS. */
 .infoHintFlyout {
-  position: absolute;
-  right: 0;
-  bottom: calc(100% + 6px);
-  z-index: 50;
-  width: min(300px, 78vw);
+  position: fixed;
+  z-index: 2500;
+  width: min(300px, calc(100vw - 16px));
   max-height: 240px;
   overflow-y: auto;
   padding: var(--sp-3) var(--sp-4);
@@ -504,21 +502,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   box-shadow: 0 8px 28px color-mix(in srgb, #000 32%, transparent);
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition: opacity 0.12s ease, visibility 0.12s ease;
-}
-
-.infoHintWrap:hover .infoHintFlyout,
-.infoHintWrap:focus-within .infoHintFlyout {
-  opacity: 1;
-  visibility: visible;
   pointer-events: auto;
-}
-
-.infoHintWrap:has(.infoHintBtnGhost:disabled) .infoHintFlyout {
-  display: none;
 }
 
 /* ── Panel Header (reusable) ── */

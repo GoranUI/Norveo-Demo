@@ -344,7 +344,7 @@ export function OrderSummary({ rows, cheapestMode, onActiveTabChange }: OrderSum
             <div className={styles.masterEmpty}>
               <Package size={20} />
               <span className={styles.masterEmptyText}>
-                {activeTab === 'pending' && 'No pending orders. Add parts from the Parts tab to create one.'}
+                {activeTab === 'pending' && 'No pending orders. Add parts from the Procurement list tab to create one.'}
                 {activeTab === 'placed' && 'No orders placed yet. Place a pending order to see it here.'}
                 {activeTab === 'completed' && 'No completed orders yet.'}
               </span>

@@ -272,7 +272,6 @@ export function EngineeringWorkspace() {
   const maxBathers = surfaceArea > 0 ? Math.round(surfaceArea / batherLoadSqFtPerPerson) : 0;
   const designBathers = Math.round(maxBathers * usageMultiplier);
 
-  const hasFilter = !!d.filtrationType;
   const hasHeating = d.heatingSystem.length > 0;
 
   const heaterInputs: HeaterSizingInputs = useMemo(() => ({
@@ -517,8 +516,16 @@ export function EngineeringWorkspace() {
           <div className={styles.eqGroup}>
             <div className={styles.eqGroupLabel}>Calculated</div>
             <DataRow label="Pool Volume" value={`${volume.toLocaleString()} gallons`} tone="calculated" />
-            <DataRow label="Heat-Up Load" value={`${Math.round(heaterSizing.grossBtuHr).toLocaleString()} BTU/hr`} tone="calculated" />
-            <DataRow label="Surface Loss" value={`${Math.round(heaterSizing.surfaceLossBtuHr).toLocaleString()} BTU/hr`} tone="calculated" />
+            <DataRow
+              label={`Heat-Up Load${heaterSizing.grossBtuHr >= heaterSizing.surfaceLossBtuHr ? ' (governing)' : ''}`}
+              value={`${Math.round(heaterSizing.grossBtuHr).toLocaleString()} BTU/hr`}
+              tone="calculated"
+            />
+            <DataRow
+              label={`Surface Loss${heaterSizing.surfaceLossBtuHr > heaterSizing.grossBtuHr ? ' (governing)' : ''}`}
+              value={`${Math.round(heaterSizing.surfaceLossBtuHr).toLocaleString()} BTU/hr`}
+              tone="calculated"
+            />
             <DataRow label="Required Heater Output" value={`${Math.round(heaterSizing.requiredBtuHr).toLocaleString()} BTU/hr`} highlight tone="calculated" />
           </div>
           <div className={styles.eqDivider} />
@@ -537,7 +544,7 @@ export function EngineeringWorkspace() {
             ))}
           </div>
           <Note>
-            <strong>Heater sizing:</strong> Based on heat-up load ({d.heaterHeatUpDays}-day target, {d.heaterStartWaterTempF}°F → {d.heaterTargetWaterTempF}°F) and surface loss at {d.heaterAmbientTempF}°F ambient. Required output uses the <strong>greater</strong> of heat-up vs surface loss (not added together), then divided by efficiency. Click a heater row to select it, or adjust assumptions in the configurator.
+            <strong>Heater sizing:</strong> Heat-up load ({d.heaterHeatUpDays}-day target, {d.heaterStartWaterTempF}°F → {d.heaterTargetWaterTempF}°F) and surface loss at {d.heaterAmbientTempF}°F ambient are calculated independently. Required output = <strong>whichever is greater</strong> ÷ efficiency — the two are <strong>not</strong> added together. The governing value is labeled above.
           </Note>
         </Section>
 
@@ -595,12 +602,10 @@ export function EngineeringWorkspace() {
       </div>
 
       <div className={styles.container} hidden={state.engineeringSubView !== 'equipment'}>
-        <Section title="Equipment Options" status={hasFilter ? 'ok' : 'warning'}>
-          <EquipmentOptionsPanel
-            designGpm={designGpm}
-            requiredBtuHr={heaterSizing.requiredBtuHr}
-          />
-        </Section>
+        <EquipmentOptionsPanel
+          designGpm={designGpm}
+          requiredBtuHr={heaterSizing.requiredBtuHr}
+        />
       </div>
     </div>
   );

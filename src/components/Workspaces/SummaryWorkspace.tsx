@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { STEP_DEFINITIONS, ConfigStep } from '../../types';
+import { isTileDetailsStepComplete, isWaterlineTileSegmentComplete } from '../../utils/finishTileSpec';
 import styles from './workspaces.module.css';
 
 export function SummaryWorkspace() {
@@ -25,7 +26,7 @@ export function SummaryWorkspace() {
     },
     {
       title: 'Finishes',
-      required: 2,
+      required: 3,
       items: [
         {
           label: 'Interior Finish',
@@ -34,16 +35,34 @@ export function SummaryWorkspace() {
           stepId: ConfigStep.InteriorFinish,
         },
         {
-          label: 'Contrasting Tile Edge',
-          value: d.stairNosingDetail ? d.stairNosingDetail : 'Not configured',
-          complete: !!d.stairNosingDetail,
+          label: 'Tile details',
+          value: (() => {
+            if (d.finishType !== 'Tile') return '—';
+            const parts = [
+              d.stairNosingDetail,
+              d.waterlineBandInches != null ? `${d.waterlineBandInches}" band` : '',
+              d.waterlineTileSizeLabel ?? '',
+              d.applyWaterlineTileToBody ? 'Field matches waterline' : 'Field tile separate',
+            ].filter(Boolean);
+            return parts.length ? parts.join(' · ') : 'Not configured';
+          })(),
+          complete: d.finishType === 'Tile' ? isTileDetailsStepComplete(d) : true,
           stepId: ConfigStep.TileDetails,
         },
         {
-          label: 'Waterline Tile',
-          value: d.tileBandHeight ? d.tileBandHeight : 'Not configured',
-          complete: !!d.tileBandHeight,
-          stepId: ConfigStep.TileDetails,
+          label: 'Waterline tile band',
+          value:
+            d.finishType === 'Plaster' || d.finishType === 'Pebble'
+              ? d.waterlineTileEnabled
+                ? [d.waterlineBandInches != null && `${d.waterlineBandInches}"`, d.waterlineTileSizeLabel].filter(Boolean).join(' · ') ||
+                  'In progress'
+                : 'Not applicable'
+              : '—',
+          complete:
+            d.finishType === 'Plaster' || d.finishType === 'Pebble'
+              ? isWaterlineTileSegmentComplete(d)
+              : true,
+          stepId: ConfigStep.InteriorFinish,
         },
       ],
     },

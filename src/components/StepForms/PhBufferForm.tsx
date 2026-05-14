@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import styles from './forms.module.css';
 
@@ -18,11 +19,13 @@ export function PhBufferForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>pH Buffer</h2>
-      <p className={styles.formDesc}>
-        How the pool keeps pH from drifting up. CO₂ is gentler and tank-fed; acid
-        systems are cheaper to install but require regular replenishment.
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>pH Buffer</h2>
+        <InfoHint
+          contextLabel="pH Buffer"
+          text="How the pool keeps pH from drifting up. CO₂ is gentler and tank-fed; acid systems are cheaper to install but require regular replenishment."
+        />
+      </div>
       <OptionButton
         label="System"
         options={OPTIONS}

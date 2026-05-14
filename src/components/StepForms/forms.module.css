@@ -64,6 +64,22 @@
   margin-top: 0;
 }
 
+.blockTitleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  margin: var(--sp-6) 0 var(--sp-3);
+}
+
+.blockTitleRow:first-child {
+  margin-top: 0;
+}
+
+.blockTitleRow .blockTitle {
+  margin: 0;
+  flex: 1;
+}
+
 /* Owner “same as customer” — full-width tile + custom checkbox (aligns with option rows) */
 .sameAsCard {
   display: flex;
@@ -198,5 +214,48 @@
 
 .secondaryBtn:disabled {
   opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Native <select> — same tile language as ui OptionButton (not OS white chrome). */
+.optionSelect {
+  display: block;
+  width: 100%;
+  max-width: 360px;
+  min-height: var(--control-h);
+  box-sizing: border-box;
+  padding: var(--sp-2) calc(var(--sp-6) + 14px) var(--sp-2) var(--sp-4);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background-color: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12' fill='none'%3E%3Cpath stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  background-size: 12px;
+  color: var(--text-primary);
+  font: inherit;
+  font-size: var(--fs-base);
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background 0.15s, border-color 0.15s, box-shadow 0.15s;
+}
+
+.optionSelect:hover:not(:disabled) {
+  background-color: var(--bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
+}
+
+.optionSelect:focus {
+  outline: none;
+}
+
+.optionSelect:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.optionSelect:disabled {
+  opacity: 0.5;
   cursor: not-allowed;
 }

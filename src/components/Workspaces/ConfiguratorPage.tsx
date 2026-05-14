@@ -25,7 +25,7 @@ const INFLATION_DRIFT_TITLE =
   'Flat rate, UI only; not applied to line totals.';
 
 const PROJECT_INFO_SEGMENTS: {
-  id: 'contacts' | 'site' | 'code';
+  id: 'contacts' | 'site';
   label: string;
   steps: ConfigStep[];
 }[] = [
@@ -34,11 +34,6 @@ const PROJECT_INFO_SEGMENTS: {
     id: 'site',
     label: 'Project',
     steps: [ConfigStep.ProjectLocation, ConfigStep.ProjectType, ConfigStep.PoolUseType],
-  },
-  {
-    id: 'code',
-    label: 'Code',
-    steps: [ConfigStep.LocalCodeAwareness, ConfigStep.LocalCodeDetails],
   },
 ];
 
@@ -398,7 +393,7 @@ function ConfiguratorPage() {
   const [highlightStep, setHighlightStep] = useState<ConfigStep | null>(null);
   /** Mechanical Systems: which single step is shown in the main pane. */
   const [mechanicalStepFocus, setMechanicalStepFocus] = useState<ConfigStep | null>(null);
-  const [projectInfoSegment, setProjectInfoSegment] = useState<'contacts' | 'site' | 'code'>('contacts');
+  const [projectInfoSegment, setProjectInfoSegment] = useState<'contacts' | 'site'>('contacts');
   const stepBlockRefs = useRef<Map<ConfigStep, HTMLDivElement>>(new Map());
 
   // Honor an external `state.activeStep` request (e.g. clicking a row in
@@ -525,30 +520,90 @@ function ConfiguratorPage() {
           {groupData.map(({ group, steps, completed, total }) => {
             const allDone = completed === total && total > 0;
             const isActive = group === selectedGroup;
+
+            const subSteps = steps.filter((s) => renderedForms.has(s.id));
+            const mechFocusId =
+              group === 'Mechanical Systems'
+                ? (mechanicalStepFocus ??
+                    subSteps.find((s) => !s.isComplete(d))?.id ??
+                    subSteps[0]?.id)
+                : null;
+
             return (
-              <button
-                key={group}
-                className={`${styles.navItem} ${isActive ? styles.navItemActive : ''} ${allDone ? styles.navItemDone : ''}`}
-                onClick={() => setActiveGroup(group)}
-              >
-                <div className={styles.navTop}>
-                  <span className={styles.navName}>{group}</span>
-                  <span className={`${styles.navCount} ${allDone ? styles.navCountDone : ''}`}>
-                    {completed}/{total}
-                  </span>
-                </div>
-                <div className={styles.stepDots}>
-                  {steps.map((s) => {
-                    const done = s.isComplete(d);
-                    return (
-                      <span
-                        key={s.id}
-                        className={`${styles.stepDot} ${done ? styles.stepDotDone : styles.stepDotPending}`}
-                      />
-                    );
-                  })}
-                </div>
-              </button>
+              <div key={group} className={styles.navGroup}>
+                <button
+                  className={`${styles.navItem} ${isActive ? styles.navItemActive : ''} ${allDone ? styles.navItemDone : ''}`}
+                  onClick={() => setActiveGroup(group)}
+                >
+                  <div className={styles.navTop}>
+                    <span className={styles.navName}>{group}</span>
+                    <span className={`${styles.navCount} ${allDone ? styles.navCountDone : ''}`}>
+                      {completed}/{total}
+                    </span>
+                  </div>
+                </button>
+
+                {group === 'Project Information' ? (
+                  <div className={styles.navSubItems}>
+                    {PROJECT_INFO_SEGMENTS.map((seg) => {
+                      const segDone = seg.steps.every((id) => {
+                        const def = STEP_DEFINITIONS.find((x) => x.id === id);
+                        return def ? def.isComplete(d) : false;
+                      });
+                      const isCurrent = isActive && projectInfoSegment === seg.id;
+                      return (
+                        <button
+                          key={seg.id}
+                          type="button"
+                          className={`${styles.navSubItem} ${segDone ? styles.navSubItemDone : ''} ${isCurrent ? styles.navSubItemCurrent : ''}`}
+                          onClick={() => {
+                            setActiveGroup(group);
+                            setProjectInfoSegment(seg.id);
+                          }}
+                        >
+                          <span className={`${styles.navSubDot} ${segDone ? styles.navSubDotDone : ''}`} />
+                          <span className={styles.navSubLabel}>{seg.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : subSteps.length > 0 ? (
+                  <div className={styles.navSubItems}>
+                    {subSteps.map((s) => {
+                      const done = s.isComplete(d);
+                      const isCurrent =
+                        isActive &&
+                        (group === 'Mechanical Systems'
+                          ? mechFocusId === s.id
+                          : false);
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          className={`${styles.navSubItem} ${done ? styles.navSubItemDone : ''} ${isCurrent ? styles.navSubItemCurrent : ''}`}
+                          onClick={() => {
+                            setActiveGroup(group);
+                            if (group === 'Mechanical Systems') {
+                              setMechanicalStepFocus(s.id);
+                            } else {
+                              window.setTimeout(() => {
+                                stepBlockRefs.current
+                                  .get(s.id)
+                                  ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                setHighlightStep(s.id);
+                                window.setTimeout(() => setHighlightStep(null), 1400);
+                              }, 0);
+                            }
+                          }}
+                        >
+                          <span className={`${styles.navSubDot} ${done ? styles.navSubDotDone : ''}`} />
+                          <span className={styles.navSubLabel}>{s.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </div>
             );
           })}
         </nav>

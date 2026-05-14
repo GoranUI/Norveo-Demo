@@ -2,6 +2,7 @@ import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import {
   Check,
   ChevronDown,
+  ChevronRight,
   AlertTriangle,
   Circle,
   CircleCheck,
@@ -144,10 +145,13 @@ export function EquipmentOptionsPanel({ designGpm, requiredBtuHr }: Props) {
     return (product as HeaterProduct).outputBtuHr >= requiredBtuHr;
   }
 
-  const [activeTab, setActiveTab] = useState<SectionId>(() => {
-    const firstUnselected = SECTIONS.find((s) => !selections[s.id]);
-    return firstUnselected?.id ?? 'pump';
+  const [openCards, setOpenCards] = useState<Record<SectionId, boolean>>({
+    pump: true,
+    filter: true,
+    heater: true,
   });
+  const toggleCard = (id: SectionId) =>
+    setOpenCards((prev) => ({ ...prev, [id]: !prev[id] }));
 
   const openConfigurator = useCallback(
     (step: ConfigStep) => {
@@ -462,6 +466,13 @@ export function EquipmentOptionsPanel({ designGpm, requiredBtuHr }: Props) {
 
     return (
       <div className={styles.eqSectionBody}>
+        {/* Selected item summary */}
+        <div className={styles.eqActiveSummary}>
+          <span className={styles.eqSectionSummary}>
+            {renderSummary(id, selected)}
+          </span>
+        </div>
+
         {/* Filter row — single dropdown button + only-matches toggle */}
         <div className={styles.eqFilterRow}>
           {renderFilterMenu(id)}
@@ -538,83 +549,48 @@ export function EquipmentOptionsPanel({ designGpm, requiredBtuHr }: Props) {
   }
 
   return (
-    <div className={styles.eqPanel}>
-      {/* Requirement summary strip */}
-      <div className={styles.eqReqStrip}>
-        <span className={styles.eqReqChip}>
-          Design GPM: <strong>{designGpm}</strong>
-        </span>
-        <span className={styles.eqReqChip}>
-          Heater: <strong>{fmtBtu(requiredBtuHr)} BTU/hr</strong>
-        </span>
-        {d.filtrationType && (
-          <span className={styles.eqReqChip}>
-            Filter: <strong>{d.filtrationType}</strong>
-          </span>
-        )}
-      </div>
-
-      <div className={styles.eqOpenConfigRow}>
-        <span className={styles.eqOpenConfigLabel}>Open configurator</span>
-        <button
-          type="button"
-          className={styles.eqOpenConfigBtn}
-          disabled={d.isFinalized}
-          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.pump)}
-        >
-          Pump brands
-        </button>
-        <button
-          type="button"
-          className={styles.eqOpenConfigBtn}
-          disabled={d.isFinalized}
-          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.filter)}
-        >
-          Filtration
-        </button>
-        <button
-          type="button"
-          className={styles.eqOpenConfigBtn}
-          disabled={d.isFinalized}
-          onClick={() => openConfigurator(OPEN_IN_CONFIGURATOR.heater)}
-        >
-          Heating
-        </button>
-      </div>
-
-      <div className={styles.eqTabs} role="tablist" aria-label="Equipment category">
-        {SECTIONS.map((meta) => {
-          const selected = selections[meta.id];
-          const Icon = meta.icon;
-          const isActive = activeTab === meta.id;
-          return (
+    <>
+      {SECTIONS.map((meta) => {
+        const selected = selections[meta.id];
+        const Icon = meta.icon;
+        const isOpen = openCards[meta.id];
+        return (
+          <div key={meta.id} className={styles.section}>
             <button
-              key={meta.id}
               type="button"
-              role="tab"
-              aria-selected={isActive}
-              className={`${styles.eqTab} ${isActive ? styles.eqTabActive : ''}`}
-              onClick={() => setActiveTab(meta.id)}
+              className={styles.sectionHeader}
+              onClick={() => toggleCard(meta.id)}
             >
-              <Icon size={14} aria-hidden />
-              {meta.label}
-              {renderStatus(selected)}
+              <div className={styles.headerLeft}>
+                {isOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}
+                <Icon size={13} aria-hidden />
+                <span>{meta.label}</span>
+                {renderStatus(selected)}
+              </div>
+              <span
+                role="button"
+                tabIndex={0}
+                aria-label={`Open ${meta.label} in configurator`}
+                className={styles.eqOpenConfigBtn}
+                aria-disabled={d.isFinalized}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!d.isFinalized) openConfigurator(OPEN_IN_CONFIGURATOR[meta.id]);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.stopPropagation();
+                    if (!d.isFinalized) openConfigurator(OPEN_IN_CONFIGURATOR[meta.id]);
+                  }
+                }}
+              >
+                Open configurator
+              </span>
             </button>
-          );
-        })}
-      </div>
-
-      <div className={styles.eqActiveSummary}>
-        <span className={styles.eqSectionSummary}>
-          {renderSummary(activeTab, selections[activeTab])}
-        </span>
-      </div>
-
-      <div className={styles.eqTabBody} role="tabpanel">
-        <section className={`${styles.eqSection} ${styles.eqSectionOpen}`}>
-          {renderSectionBody(activeTab)}
-        </section>
-      </div>
-    </div>
+            {isOpen && renderSectionBody(meta.id)}
+          </div>
+        );
+      })}
+    </>
   );
 }

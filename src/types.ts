@@ -1,5 +1,6 @@
 import { isReasonableEmail } from './utils/email';
 import { isDeckStepVisible, isDivingBoardStepVisible, secondarySanitationRequiredByCodes } from './utils/codeFeatures';
+import { isTileDetailsStepComplete } from './utils/finishTileSpec';
 
 // ── Workspaces (bottom tabs) ──
 export type Workspace =
@@ -175,9 +176,9 @@ export interface ProjectData {
   /** Preferred manufacturer per equipment category. `null` = "any / no preference". */
   brandPreferences: Record<EquipmentCategory, string | null>;
   filtrationType: string | null;
-  /** Catalogue product id (e.g. 'flt-pen-tr140') for the chosen filter tank. Null = none picked. */
-  selectedFilterModelId: string | null;
-  /** Number of identical filter tanks installed in parallel. */
+  /** Catalogue product ids for chosen filter tanks (multi-select). */
+  selectedFilterModelIds: string[];
+  /** Number of identical filter tanks installed in parallel (used as default qty for new selections). */
   filterCount: number;
   /** Optional qty override keyed by catalogue model id while comparing rows. */
   filterCatalogQtyByModelId: Record<string, number>;
@@ -237,10 +238,24 @@ export interface ProjectData {
   waterlineTileSizeLabel: string | null;
   waterlinePickMode: 'colors' | 'price-range' | 'unknown';
   waterlinePriceTier: string | null;
+  /** When band height is Custom, user-entered inches (parsed into waterlineBandInches). */
+  waterlineBandCustomInches: string;
+  /** When tile size is Custom, free-text (e.g. 3×9). */
+  waterlineTileSizeCustom: string;
+  /** When waterlinePickMode is colors, free-text color / mosaic notes. */
+  waterlineTileColorNotes: string;
   /** Whole pool is tile — use same picker as waterline. */
   allTilePool: boolean;
   /** Copy waterline choices to full tile body. */
   applyWaterlineTileToBody: boolean;
+  /** Field / vessel tile (all-tile pool) when not mirroring waterline — parallel to waterline* fields. */
+  bodyTileBandInches: number | null;
+  bodyTileBandCustomInches: string;
+  bodyTileSizeLabel: string | null;
+  bodyTileSizeCustom: string;
+  bodyTilePickMode: 'colors' | 'price-range' | 'unknown';
+  bodyTilePriceTier: string | null;
+  bodyTileColorNotes: string;
   /** Finish brand / line (e.g. Pebble Tec line). */
   finishBrand: string | null;
   finishProductLine: string | null;
@@ -583,13 +598,14 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     getValue: (d) => {
       const parts: string[] = [];
       if (d.filtrationType) parts.push(d.filtrationType);
-      if (d.selectedFilterModelId && d.filterCount > 0) {
-        parts.push(`${d.filterCount}× selected`);
+      const ids = d.selectedFilterModelIds ?? [];
+      if (ids.length > 0) {
+        parts.push(`${ids.length} model${ids.length !== 1 ? 's' : ''} selected`);
       }
       return parts.length ? truncate(parts.join(' · ')) : '';
     },
     isVisible: () => true,
-    isComplete: (d) => !!d.filtrationType && !!d.selectedFilterModelId && d.filterCount > 0,
+    isComplete: (d) => !!d.filtrationType && (d.selectedFilterModelIds ?? []).length > 0,
   },
   {
     id: ConfigStep.Sanitation,
@@ -655,11 +671,15 @@ export const STEP_DEFINITIONS: StepMeta[] = [
     label: 'Tile Details',
     group: 'Finishes',
     getValue: (d) => {
-      const parts = [d.tileBandHeight, d.stairNosingDetail].filter(Boolean);
+      const parts = [
+        d.stairNosingDetail,
+        d.waterlineBandInches != null && `${d.waterlineBandInches}"`,
+        d.waterlineTileSizeLabel,
+      ].filter(Boolean);
       return parts.length ? truncate(parts.join(', ')) : '';
     },
     isVisible: (d) => d.finishType === 'Tile',
-    isComplete: (d) => !!(d.tileBandHeight && d.stairNosingDetail),
+    isComplete: (d) => isTileDetailsStepComplete(d),
   },
   {
     id: ConfigStep.WaterFeatures,

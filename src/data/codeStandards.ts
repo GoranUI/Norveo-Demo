@@ -17,6 +17,9 @@ export interface CodeStandard {
   scope?: string;
 }
 
+/** When selected (with code awareness), Deck & Diving Board steps are N/A unless the wizard override is enabled. */
+export const CODE_ID_DECK_DIVING_NA_BY_LOCAL = 'local-no-deck-diving';
+
 export const CODE_STANDARDS: CodeStandard[] = [
   {
     id: 'ispsc-2021',
@@ -41,6 +44,12 @@ export const CODE_STANDARDS: CodeStandard[] = [
     short: 'ANSI/APSP/ICC-11',
     label: 'ANSI/APSP/ICC-11 — Water Quality in Public Pools and Spas',
     scope: 'ANSI / Pool & Hot Tub Alliance',
+  },
+  {
+    id: CODE_ID_DECK_DIVING_NA_BY_LOCAL,
+    short: 'Deck/diving N/A',
+    label: 'Local chapter — deck & diving board not applicable under selected code',
+    scope: 'Demo — marks Deck / Diving Board N/A; use wizard override to configure anyway',
   },
 ];
 

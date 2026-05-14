@@ -1,8 +1,11 @@
-import { CheckCircle2 } from 'lucide-react';
+import { Ban, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../store';
-import { isDivingBoardStepVisible } from '../../utils/codeFeatures';
+import { isDivingBoardStepVisible, deckDivingSuppressedByLocalCode } from '../../utils/codeFeatures';
+import { InfoHint } from '../ui/InfoHint';
 import formStyles from './forms.module.css';
 import styles from './DeckForm.module.css';
+
+const DIVING_INFO_TEXT = "Each board reduces usable deep-end area for bather-load purposes. Brett spec defaults to 300 sf of exclusion per board; tune below if a local code differs.";
 
 function fmtNum(n: number, digits = 0): string {
   if (!Number.isFinite(n) || n === 0) return digits === 0 ? '0' : (0).toFixed(digits);
@@ -31,17 +34,51 @@ export function DivingBoardForm() {
 
   const totalExclusion = d.numDivingBoards * d.divingBoardExclusionSf;
   const showInputs = isDivingBoardStepVisible(d);
+  const suppressedByCode = deckDivingSuppressedByLocalCode(d);
+
+  if (!showInputs && suppressedByCode) {
+    return (
+      <div className={formStyles.form}>
+        <div className={styles.titleRow}>
+          <h2 className={formStyles.formTitle}>Diving Board</h2>
+          <InfoHint contextLabel="Diving Board" text={DIVING_INFO_TEXT} />
+          <span className={styles.codeUnavailableBadge}>
+            <Ban size={13} aria-hidden="true" />
+            Due to local code this option is unavailable
+          </span>
+        </div>
+        <div className={styles.naPanel}>
+          <p className={styles.naTitle}>Not applicable under selected code standards</p>
+          <p className={styles.naBody}>
+            You selected a model code that marks diving-board data as out of scope for this
+            configuration path. Remove that code on <strong>Code Standards</strong> or use the
+            override if an exception still requires board counts or exclusions.
+          </p>
+          <div className={styles.naActions}>
+            <button
+              type="button"
+              className={styles.naBtn}
+              disabled={disabled}
+              onClick={() =>
+                dispatch({ type: 'UPDATE_DATA', payload: { deckDivingWizardOverride: true } })
+              }
+            >
+              Configure diving board anyway
+            </button>
+            <span className={styles.naGhost}>Also restores the Deck step when it was hidden by code or pool class.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!showInputs) {
     return (
       <div className={formStyles.form}>
         <div className={styles.titleRow}>
           <h2 className={formStyles.formTitle}>Diving Board</h2>
+          <InfoHint contextLabel="Diving Board" text={DIVING_INFO_TEXT} />
         </div>
-        <p className={formStyles.formDesc}>
-          Each board reduces usable deep-end area for bather-load purposes. Brett spec defaults to
-          300&nbsp;sf of exclusion per board; tune below if a local code differs.
-        </p>
         <div className={styles.naPanel}>
           <p className={styles.naTitle}>Not applicable for the selected pool class</p>
           <p className={styles.naBody}>
@@ -72,6 +109,7 @@ export function DivingBoardForm() {
     <div className={formStyles.form}>
       <div className={styles.titleRow}>
         <h2 className={formStyles.formTitle}>Diving Board</h2>
+        <InfoHint contextLabel="Diving Board" text={DIVING_INFO_TEXT} />
         {isComplete && (
           <span className={styles.completeBadge}>
             <CheckCircle2 size={13} aria-hidden="true" />
@@ -79,11 +117,6 @@ export function DivingBoardForm() {
           </span>
         )}
       </div>
-
-      <p className={formStyles.formDesc}>
-        Each board reduces usable deep-end area for bather-load purposes. Brett spec defaults to
-        300&nbsp;sf of exclusion per board; tune below if a local code differs.
-      </p>
 
       <div className={styles.sectionLabel}>Boards</div>
 

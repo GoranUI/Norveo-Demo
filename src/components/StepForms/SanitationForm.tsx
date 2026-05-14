@@ -1,6 +1,7 @@
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
 import { BrandSelect } from '../ui/BrandSelect';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import { getBrandsForCategory } from '../../data/brands';
 import styles from './forms.module.css';
@@ -22,7 +23,13 @@ export function SanitationForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Primary Sanitation</h2>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Primary Sanitation</h2>
+        <InfoHint
+          contextLabel="Primary Sanitation"
+          text="The main chemical system keeping the water safe. Choose a preferred equipment brand first, then pick the sanitizer chemistry — from liquid chlorine and salt systems to bromine."
+        />
+      </div>
       <BrandSelect
         brands={SANITATION_BRANDS}
         value={d.brandPreferences.sanitation}

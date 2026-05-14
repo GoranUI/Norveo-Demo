@@ -78,7 +78,7 @@ const DEMO_READY_PROJECT_PRESET: Partial<ProjectData> = {
     lighting: null,
   },
   filtrationType: 'Sand',
-  selectedFilterModelId: 'flt-pen-tr100',
+  selectedFilterModelIds: ['flt-pen-tr100'],
   filterCount: 2,
   sanitationType: 'Saltwater Chlorine Generator',
   chemicalControl: 'Basic (CAT 2000)',

@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import styles from './forms.module.css';
 
@@ -18,11 +19,13 @@ export function ChemicalControlForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Chemical Control</h2>
-      <p className={styles.formDesc}>
-        Automated chemistry controller. Pick a tier — controllers monitor pH/ORP
-        (basic) up through full free-chlorine + dosing logic (advanced).
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Chemical Control</h2>
+        <InfoHint
+          contextLabel="Chemical Control"
+          text="Automated chemistry controller. Pick a tier — controllers monitor pH/ORP (basic) up through full free-chlorine + dosing logic (advanced)."
+        />
+      </div>
       <OptionButton
         label="Controller Tier"
         options={OPTIONS}

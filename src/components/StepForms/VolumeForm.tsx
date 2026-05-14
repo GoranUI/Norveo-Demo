@@ -10,6 +10,7 @@ import {
   type PoolSection,
   type PoolSectionType,
 } from '../../data/poolSections';
+import { InfoHint } from '../ui/InfoHint';
 import formStyles from './forms.module.css';
 import styles from './VolumeForm.module.css';
 
@@ -51,6 +52,10 @@ export function VolumeForm() {
     <div className={formStyles.form}>
       <div className={styles.titleRow}>
         <h2 className={`${formStyles.formTitle} ${styles.volumeTitle}`}>Volume Calculator</h2>
+        <InfoHint
+          contextLabel="Volume Calculator"
+          text="Add a row for each distinct area of the pool. Volume and gallons are calculated automatically from area and average depth."
+        />
         {isComplete && (
           <span className={styles.completeBadge}>
             <CheckCircle2 size={13} aria-hidden="true" />
@@ -58,11 +63,6 @@ export function VolumeForm() {
           </span>
         )}
       </div>
-
-      <p className={formStyles.formDesc}>
-        Add a row for each distinct area of the pool. Volume and gallons are calculated automatically
-        from area &amp; average depth.
-      </p>
 
       <div className={styles.sectionLabel}>Pool Sections</div>
 

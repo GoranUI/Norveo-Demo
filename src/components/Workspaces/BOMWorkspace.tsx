@@ -220,26 +220,10 @@ export function BOMWorkspace() {
             className={`${styles.viewTab} ${activeView === v ? styles.viewTabActive : ''} ${orderNeedsApproval ? styles.viewTabAttention : ''}`}
             onClick={() => setActiveView(v)}
           >
-            {v === 'parts' ? 'Line items' : v === 'estimate' ? 'Estimate' : 'Orders'}
+            {v === 'parts' ? 'Procurement list' : v === 'estimate' ? 'Estimate' : 'Orders'}
           </button>
         );
       })}
-    </div>
-  );
-
-  const dualToolStrip = (
-    <div className={styles.dualToolStrip} role="presentation">
-      <div className={styles.dualToolLeft}>
-        <DollarSign size={14} aria-hidden />
-        <span>Estimate</span>
-        <span className={styles.dualToolHint}>Budget vs. actuals</span>
-      </div>
-      <div className={styles.dualToolDivider} />
-      <div className={styles.dualToolRight}>
-        <ShoppingCart size={14} aria-hidden />
-        <span>Procurement</span>
-        <span className={styles.dualToolHint}>Line items, suppliers, orders</span>
-      </div>
     </div>
   );
 
@@ -416,20 +400,17 @@ export function BOMWorkspace() {
     );
   }
 
-  const headerStack = (
-    <div className={styles.headerStack}>
-      <div className={styles.topBar}>
-        {viewTabs}
-        <div className={styles.topBarRight}>{rightActions}</div>
-      </div>
-      {dualToolStrip}
+  const workspaceHeader = (
+    <div className={styles.topBar}>
+      {viewTabs}
+      <div className={styles.topBarRight}>{rightActions}</div>
     </div>
   );
 
   if (activeView === 'estimate') {
     return (
       <div className={styles.outer}>
-        {headerStack}
+        {workspaceHeader}
         <EstimateWorkspace
           estimateView={estimateView}
           onEstimateViewChange={setEstimateView}
@@ -441,7 +422,7 @@ export function BOMWorkspace() {
   if (activeView === 'order') {
     return (
       <div className={styles.outer}>
-        {headerStack}
+        {workspaceHeader}
         {procurementReady ? (
           <OrderSummary
             rows={rows}
@@ -474,7 +455,7 @@ export function BOMWorkspace() {
 
   return (
     <div className={styles.outer}>
-      {headerStack}
+      {workspaceHeader}
       {suppliers.length > 0 && (
         <div className={styles.supplierChipRow} role="group" aria-label="Filter by supplier">
           <span className={styles.supplierChipLabel}>Supplier</span>

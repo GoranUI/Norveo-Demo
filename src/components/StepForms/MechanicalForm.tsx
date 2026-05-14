@@ -3,6 +3,7 @@ import { flattenItems } from '../../data/projectItems';
 import type { InletStrategy } from '../../types';
 import { OptionButton } from '../ui/OptionButton';
 import { MultiSelect } from '../ui/MultiSelect';
+import { InfoHint } from '../ui/InfoHint';
 import styles from './forms.module.css';
 
 export function MechanicalForm() {
@@ -16,7 +17,13 @@ export function MechanicalForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Mechanical Systems</h2>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Mechanical Systems</h2>
+        <InfoHint
+          contextLabel="Mechanical Systems"
+          text="Choose how to specify your mechanical equipment. 'I know my system' lets you pick brands directly in each equipment step. 'Help me choose' uses your priorities to guide recommendations across Filtration, Sanitation, and Heating."
+        />
+      </div>
       <OptionButton
         label="System Knowledge"
         options={[
@@ -27,14 +34,6 @@ export function MechanicalForm() {
         onChange={(v) => update({ mechanicalKnowledge: v })}
         disabled={disabled}
       />
-      {d.mechanicalKnowledge === 'know' && (
-        <div className={styles.conditional}>
-          <p className={styles.formDesc}>
-            Pick preferred brands per equipment type in the Filtration, Sanitation, and Heating
-            steps. Each picker reads from the BackOffice brand catalogue.
-          </p>
-        </div>
-      )}
       {d.mechanicalKnowledge === 'help' && (
         <div className={styles.conditional}>
           <MultiSelect
