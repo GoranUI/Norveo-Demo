@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import { ClipboardList } from 'lucide-react';
 import { useApp } from '../../store';
 import {
@@ -13,7 +13,6 @@ import type {
   CatalogTemplateStatus,
   QuantityDriver,
 } from '../../data/companyCatalog';
-import type { UserMode } from '../../types';
 import styles from './catalog.module.css';
 
 const DRIVERS = Object.keys(QUANTITY_DRIVER_LABELS) as QuantityDriver[];
@@ -121,13 +120,10 @@ export function CatalogWorkspace() {
     return list;
   }, [templates, statusFilter, search]);
 
-  useEffect(() => {
-    if (filtered.length === 0) {
-      setEditorId(null);
-      return;
-    }
-    setEditorId((prev) => (prev && filtered.some((x) => x.id === prev) ? prev : filtered[0].id));
-  }, [filtered]);
+  const activeEditorId =
+    editorId && filtered.some((x) => x.id === editorId)
+      ? editorId
+      : filtered[0]?.id ?? null;
 
   const toggleSelect = (id: string) => {
     const t = templates.find((x) => x.id === id);
@@ -182,17 +178,22 @@ export function CatalogWorkspace() {
           <div className={styles.sub}>Reusable BOM line templates. Publish to use in projects.</div>
           <div className={styles.roleRow}>
             <span>Role (demo):</span>
-            <select
-              className={styles.roleSelect}
-              value={state.userMode}
-              onChange={(e) =>
-                dispatch({ type: 'SET_USER_MODE', mode: e.target.value as UserMode })
-              }
-              aria-label="User role for catalog editing"
-            >
-              <option value="engineer">Eng</option>
-              <option value="companyAdmin">Admin</option>
-            </select>
+            <div className={styles.roleSeg} role="group" aria-label="User role for catalog editing">
+              <button
+                type="button"
+                className={`${styles.roleSegBtn} ${state.userMode === 'engineer' ? styles.roleSegBtnActive : ''}`}
+                onClick={() => dispatch({ type: 'SET_USER_MODE', mode: 'engineer' })}
+              >
+                Engineer
+              </button>
+              <button
+                type="button"
+                className={`${styles.roleSegBtn} ${state.userMode === 'companyAdmin' ? styles.roleSegBtnActiveAdmin : ''}`}
+                onClick={() => dispatch({ type: 'SET_USER_MODE', mode: 'companyAdmin' })}
+              >
+                Admin
+              </button>
+            </div>
           </div>
         </div>
         <div className={styles.actions}>
@@ -247,7 +248,7 @@ export function CatalogWorkspace() {
               className={`${styles.filterBtn} ${statusFilter === f ? styles.filterBtnActive : ''}`}
               onClick={() => setStatusFilter(f)}
             >
-              {f === 'all' ? 'All' : f}
+              {f}
             </button>
           ))}
         </div>
@@ -261,7 +262,7 @@ export function CatalogWorkspace() {
               <button
                 key={t.id}
                 type="button"
-                className={`${styles.sidebarItem} ${editorId === t.id ? styles.sidebarItemActive : ''}`}
+                className={`${styles.sidebarItem} ${activeEditorId === t.id ? styles.sidebarItemActive : ''}`}
                 onClick={() => setEditorId(t.id)}
               >
                 {t.name}
@@ -274,7 +275,7 @@ export function CatalogWorkspace() {
           <p className={styles.empty}>No lines match filters.</p>
         ) : (
           filtered
-            .filter((t) => t.id === editorId)
+            .filter((t) => t.id === activeEditorId)
             .map((t) => {
             const canEdit = isAdmin && t.status !== 'archived';
             const canSelect = t.status === 'active' && t.kind !== 'assembly';
@@ -537,14 +538,14 @@ export function CatalogWorkspace() {
 
                 <div className={styles.cardActions}>
                   {canSelect && (
-                    <label className={styles.chkRow}>
+                    <label className={`${styles.chkRow} ${styles.cardSelect}`}>
                       <input
                         type="checkbox"
                         className={styles.chk}
                         checked={selectedIds.has(t.id)}
                         onChange={() => toggleSelect(t.id)}
                       />
-                      Select for bulk add
+                      <span>Select for bulk add</span>
                     </label>
                   )}
                   {t.status === 'active' && (t.kind === 'assembly' ? (

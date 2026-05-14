@@ -546,36 +546,47 @@
 }
 
 
-.compQtySelect {
+.compQtyInput {
   width: 100%;
   max-width: 3.5rem;
   box-sizing: border-box;
-  padding: 3px 4px 3px 6px;
+  padding: 3px 6px;
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background-color: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
+  background: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
   color: var(--text-primary);
   text-align: right;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
   transition: background-color 0.15s, border-color 0.15s;
 }
 
-.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compQtySelect:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+.compQtyInput::-webkit-outer-spin-button,
+.compQtyInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
-.compQtySelect:focus {
+.compQtyInput[type='number'] {
+  -moz-appearance: textfield;
+}
+
+.compQtyInput:hover:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+}
+
+.compQtyInput:focus {
   outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: 1px;
 }
 
-.compQtySelect:disabled {
+.compQtyInput:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compQtyInput:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
 }
 
 .compRowSelected {

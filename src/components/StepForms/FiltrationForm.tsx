@@ -338,13 +338,16 @@ function FiltrationCatalogueBlock({
                   role="cell"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <select
-                    className={styles.compQtySelect}
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    className={styles.compQtyInput}
                     value={rowQty}
                     disabled={disabled}
                     aria-label={`Quantity for ${f.model}`}
                     onChange={(e) => {
-                      const n = Number(e.target.value);
+                      const n = Math.max(1, Math.min(12, parseInt(e.target.value, 10) || 1));
                       dispatch({
                         type: 'UPDATE_DATA',
                         payload: {
@@ -353,11 +356,7 @@ function FiltrationCatalogueBlock({
                         },
                       });
                     }}
-                  >
-                    {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
-                      <option key={n} value={n}>{n}</option>
-                    ))}
-                  </select>
+                  />
                 </div>
                 <div
                   className={`${styles.compCell} ${styles.compCellRight} ${styles.compMetricPer}`}
@@ -535,10 +534,9 @@ export function FiltrationForm() {
         )}
       </div>
 
-      {/* ── Filtration Type ── */}
-      <div className={styles.sectionLabel}>Filtration Type</div>
+      {/* ── Filtration type (single label — avoid duplicating “Filtration” + “Filter”) ── */}
       <OptionButton
-        label="Filter Type"
+        label="Filtration type"
         options={MEDIA_OPTIONS}
         value={d.filtrationType}
         onChange={(v) =>
