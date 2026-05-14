@@ -1,10 +1,13 @@
 import { useMemo } from 'react';
-import { CheckCircle2 } from 'lucide-react';
+import { Ban, CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../store';
 import { calculateVolumeTotals } from '../../data/poolSections';
-import { isDeckStepVisible } from '../../utils/codeFeatures';
+import { isDeckStepVisible, deckDivingSuppressedByLocalCode } from '../../utils/codeFeatures';
+import { InfoHint } from '../ui/InfoHint';
 import formStyles from './forms.module.css';
 import styles from './DeckForm.module.css';
+
+const DECK_INFO_TEXT = 'Total deck surface area surrounding the pool. The deck-to-pool ratio drives the bather-load category used downstream in engineering.';
 
 function fmtNum(n: number, digits = 0): string {
   if (!Number.isFinite(n) || n === 0) return digits === 0 ? '0' : (0).toFixed(digits);
@@ -38,17 +41,51 @@ export function DeckForm() {
     dispatch({ type: 'UPDATE_DATA', payload: { deckSf: Math.max(0, v) } });
 
   const showInputs = isDeckStepVisible(d);
+  const suppressedByCode = deckDivingSuppressedByLocalCode(d);
+
+  if (!showInputs && suppressedByCode) {
+    return (
+      <div className={formStyles.form}>
+        <div className={styles.titleRow}>
+          <h2 className={formStyles.formTitle}>Deck</h2>
+          <InfoHint contextLabel="Deck" text={DECK_INFO_TEXT} />
+          <span className={styles.codeUnavailableBadge}>
+            <Ban size={13} aria-hidden="true" />
+            Due to local code this option is unavailable
+          </span>
+        </div>
+        <div className={styles.naPanel}>
+          <p className={styles.naTitle}>Not applicable under selected code standards</p>
+          <p className={styles.naBody}>
+            You selected a model code that marks deck data as out of scope for this configuration
+            path. Remove that code on <strong>Code Standards</strong> or use the override if an
+            exception still requires deck square footage.
+          </p>
+          <div className={styles.naActions}>
+            <button
+              type="button"
+              className={styles.naBtn}
+              disabled={disabled}
+              onClick={() =>
+                dispatch({ type: 'UPDATE_DATA', payload: { deckDivingWizardOverride: true } })
+              }
+            >
+              Configure deck anyway
+            </button>
+            <span className={styles.naGhost}>Also restores the Diving Board step when it was hidden by code or pool class.</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!showInputs) {
     return (
       <div className={formStyles.form}>
         <div className={styles.titleRow}>
           <h2 className={formStyles.formTitle}>Deck</h2>
+          <InfoHint contextLabel="Deck" text={DECK_INFO_TEXT} />
         </div>
-        <p className={formStyles.formDesc}>
-          Total deck surface area surrounding the pool. The deck-to-pool ratio drives the bather-load
-          category used downstream in engineering.
-        </p>
         <div className={styles.naPanel}>
           <p className={styles.naTitle}>Not applicable for the selected pool class</p>
           <p className={styles.naBody}>
@@ -80,6 +117,7 @@ export function DeckForm() {
     <div className={formStyles.form}>
       <div className={styles.titleRow}>
         <h2 className={formStyles.formTitle}>Deck</h2>
+        <InfoHint contextLabel="Deck" text={DECK_INFO_TEXT} />
         {isComplete && (
           <span className={styles.completeBadge}>
             <CheckCircle2 size={13} aria-hidden="true" />
@@ -87,11 +125,6 @@ export function DeckForm() {
           </span>
         )}
       </div>
-
-      <p className={formStyles.formDesc}>
-        Total deck surface area surrounding the pool. The deck-to-pool ratio drives the bather-load
-        category used downstream in engineering.
-      </p>
 
       <div className={styles.sectionLabel}>Deck Area</div>
 

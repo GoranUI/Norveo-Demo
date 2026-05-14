@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { MultiSelect } from '../ui/MultiSelect';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import styles from './forms.module.css';
 
@@ -17,7 +18,13 @@ export function WaterFeaturesForm() {
   const { state, dispatch } = useApp();
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Water Features</h2>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Water Features</h2>
+        <InfoHint
+          contextLabel="Water Features"
+          text="Decorative and interactive water elements added to the pool. Each selected feature adds to the project cost estimate. Select None if the pool will have no added features."
+        />
+      </div>
       <MultiSelect
         label="Features"
         options={OPTIONS}

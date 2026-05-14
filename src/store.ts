@@ -84,15 +84,35 @@ function syncFilterBomLine(items: ProjectItem[], data: ProjectData): ProjectItem
   const ft = data.filtrationType;
   if (!ft) return items;
 
-  const selectedId = data.selectedFilterModelId;
-  if (selectedId) {
-    const product = FILTER_CATALOG.find((f) => f.id === selectedId);
-    if (product && product.mediaType === ft) {
+  const selectedIds = data.selectedFilterModelIds ?? [];
+  const qtyById = data.filterCatalogQtyByModelId ?? {};
+
+  if (selectedIds.length > 0) {
+    let totalPrice = 0;
+    const modelLabels: string[] = [];
+    const brands = new Set<string>();
+    const partNos: string[] = [];
+    let allMatchMedia = true;
+
+    for (const id of selectedIds) {
+      const product = FILTER_CATALOG.find((f) => f.id === id);
+      if (product && product.mediaType === ft) {
+        const qty = qtyById[id] ?? 1;
+        totalPrice += product.price * qty;
+        modelLabels.push(qty > 1 ? `${product.model} ×${qty}` : product.model);
+        brands.add(product.brand);
+        partNos.push(product.partNo);
+      } else {
+        allMatchMedia = false;
+      }
+    }
+
+    if (totalPrice > 0 && allMatchMedia) {
       return updateItemInTree(items, 'filter', {
-        price: product.price,
-        partNo: product.partNo,
-        brand: product.brand,
-        description: `${product.model} — ${product.mediaType}`,
+        price: totalPrice,
+        partNo: partNos.length === 1 ? partNos[0] : 'MULTI',
+        brand: brands.size === 1 ? [...brands][0] : 'Various',
+        description: modelLabels.join(', ') + ` — ${ft}`,
         name: 'Filter System',
       });
     }
@@ -175,7 +195,7 @@ export const DEFAULT_DATA: ProjectData = {
   // For ~100k gal commercial, sand is the workhorse — cheaper than DE,
   // higher throughput than cartridge, fits a Class B public pool.
   filtrationType: 'Sand',
-  selectedFilterModelId: null,
+  selectedFilterModelIds: [],
   filterCount: 3,
   filterCatalogQtyByModelId: {},
   filterDesignRateGpmPerSf: null,
@@ -225,8 +245,18 @@ export const DEFAULT_DATA: ProjectData = {
   waterlineTileSizeLabel: '6×6',
   waterlinePickMode: 'unknown',
   waterlinePriceTier: 'high',
-  allTilePool: false,
-  applyWaterlineTileToBody: false,
+  waterlineBandCustomInches: '',
+  waterlineTileSizeCustom: '',
+  waterlineTileColorNotes: '',
+  allTilePool: true,
+  applyWaterlineTileToBody: true,
+  bodyTileBandInches: 6,
+  bodyTileBandCustomInches: '',
+  bodyTileSizeLabel: '6×6',
+  bodyTileSizeCustom: '',
+  bodyTilePickMode: 'unknown',
+  bodyTilePriceTier: 'high',
+  bodyTileColorNotes: '',
   finishBrand: null,
   finishProductLine: null,
   finishColorName: null,
@@ -288,7 +318,7 @@ function createBlankProjectData(): ProjectData {
       lighting: null,
     },
     filtrationType: null,
-    selectedFilterModelId: null,
+    selectedFilterModelIds: [],
     filterCount: 1,
     filterCatalogQtyByModelId: {},
     filterDesignRateGpmPerSf: null,
@@ -322,11 +352,21 @@ function createBlankProjectData(): ProjectData {
     stairNosingDetail: null,
     waterlineTileEnabled: false,
     waterlineBandInches: 6,
-    waterlineTileSizeLabel: null,
+    waterlineTileSizeLabel: '6×6',
     waterlinePickMode: 'unknown',
-    waterlinePriceTier: null,
+    waterlinePriceTier: 'high',
+    waterlineBandCustomInches: '',
+    waterlineTileSizeCustom: '',
+    waterlineTileColorNotes: '',
     allTilePool: false,
     applyWaterlineTileToBody: false,
+    bodyTileBandInches: 6,
+    bodyTileBandCustomInches: '',
+    bodyTileSizeLabel: '6×6',
+    bodyTileSizeCustom: '',
+    bodyTilePickMode: 'unknown',
+    bodyTilePriceTier: 'high',
+    bodyTileColorNotes: '',
     finishBrand: null,
     finishProductLine: null,
     finishColorName: null,
@@ -727,8 +767,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case 'UPDATE_DATA': {
       if (state.data.isFinalized) return state;
       const nextData = { ...state.data, ...action.payload };
-      const shouldSyncFilter =
-        'filtrationType' in action.payload || 'selectedFilterModelId' in action.payload;
+        const shouldSyncFilter =
+        'filtrationType' in action.payload || 'selectedFilterModelIds' in action.payload;
       let nextItems = shouldSyncFilter ? syncFilterBomLine(state.projectItems, nextData) : state.projectItems;
       nextItems = syncInletBomLine(nextItems, nextData, state.engineeringFlowAddGpm);
       return {
@@ -839,7 +879,13 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         'projectType', 'poolUseType', 'gutterStyle', 'copingStyle',
         'mechanicalKnowledge', 'mechanicalBrandPreference', 'mechanicalPriorities',
         'filtrationType', 'sanitationType', 'heatingSystem', 'finishType',
-        'tileBandHeight', 'customTileHeight', 'stairNosingDetail', 'waterFeatures',
+        'tileBandHeight', 'customTileHeight', 'stairNosingDetail',
+        'waterlineTileEnabled', 'waterlineBandInches', 'waterlineBandCustomInches',
+        'waterlineTileSizeLabel', 'waterlineTileSizeCustom', 'waterlinePickMode', 'waterlinePriceTier',
+        'waterlineTileColorNotes', 'allTilePool', 'applyWaterlineTileToBody',
+        'bodyTileBandInches', 'bodyTileBandCustomInches', 'bodyTileSizeLabel', 'bodyTileSizeCustom',
+        'bodyTilePickMode', 'bodyTilePriceTier', 'bodyTileColorNotes',
+        'waterFeatures',
         'batherLoadSqFtPerPerson', 'batherLoadUsageMultiplier',
         'turnoverHoursOverride', 'designSuctionFps', 'designReturnFps',
       ];

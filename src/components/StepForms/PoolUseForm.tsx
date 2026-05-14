@@ -32,13 +32,9 @@ export function PoolUseForm() {
         <h2 className={styles.formTitle}>Pool Use Type</h2>
         <InfoHint
           contextLabel="Pool use type"
-          text="Each option is an ISPSC-style classification. It controls turnover time, bather-load defaults, and which mechanical steps apply. Use the “i” on each row for that pool type in plain language."
+          text="Pick the ISPSC classification that best matches the project. Each option controls turnover time, bather-load defaults, and which mechanical steps apply. Class A/B/C use a depth-based turnover formula; everything else uses a fixed value. Use the 'i' on each row for plain-language descriptions."
         />
       </div>
-      <p className={styles.formDesc}>
-        Pick the ISPSC classification that best matches the project. Class A/B/C
-        use a depth-based turnover formula; everything else uses a fixed value.
-      </p>
 
       <NestedOptionButton
         mode="single"

@@ -162,6 +162,16 @@
   color: var(--text-muted);
 }
 
+.catFieldHint {
+  margin: 0 0 2px;
+  font-size: 10px;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-muted);
+  line-height: 1.35;
+}
+
 .catInput {
   width: 100%;
   min-width: 88px;
@@ -188,23 +198,37 @@
 .catSelect {
   min-width: 140px;
   height: 32px;
-  padding: 0 var(--sp-3);
+  box-sizing: border-box;
+  padding: 0 calc(var(--sp-4) + 12px) 0 var(--sp-3);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg-input);
+  background-color: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10' viewBox='0 0 12 12' fill='none'%3E%3Cpath stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5L6 8l3-3.5'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 8px center;
+  background-size: 10px;
   color: var(--text-primary);
+  font: inherit;
   font-size: var(--fs-xs);
   cursor: pointer;
-  transition: border-color 0.15s;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.15s, border-color 0.15s, box-shadow 0.15s;
 }
 
 .catSelect:hover:not(:disabled) {
-  border-color: color-mix(in srgb, var(--accent) 28%, var(--border));
+  background-color: var(--bg-hover);
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--border));
 }
 
 .catSelect:focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  outline: 2px solid var(--border-focus);
   outline-offset: 1px;
+}
+
+.catSelect:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 .brandChips {
@@ -521,31 +545,37 @@
   box-shadow: 0 1px 0 color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
-.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compRadio {
-  border-color: var(--text-muted);
-}
 
-.compQtyInput {
+.compQtySelect {
   width: 100%;
-  max-width: 3.25rem;
+  max-width: 3.5rem;
   box-sizing: border-box;
-  padding: 4px 6px;
+  padding: 3px 4px 3px 6px;
   font-size: var(--fs-sm);
   font-variant-numeric: tabular-nums;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
-  background: var(--bg-panel);
+  background-color: color-mix(in srgb, var(--bg-base) 26%, var(--bg-panel));
   color: var(--text-primary);
   text-align: right;
+  cursor: pointer;
+  appearance: none;
+  -webkit-appearance: none;
+  transition: background-color 0.15s, border-color 0.15s;
 }
 
-.compQtyInput:focus {
+.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compQtySelect:not(:disabled) {
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+.compQtySelect:focus {
   outline: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
   outline-offset: 1px;
 }
 
-.compQtyInput:disabled {
+.compQtySelect:disabled {
   opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .compRowSelected {
@@ -590,31 +620,37 @@
   min-width: 0;
 }
 
-.compRadio {
+.compCheckbox {
   box-sizing: border-box;
   width: 14px;
   height: 14px;
-  border-radius: 50%;
+  border-radius: 3px;
   border: 1.5px solid var(--border);
   flex-shrink: 0;
   position: relative;
   line-height: 0;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.compRowSelected .compRowMainBtn:not(:disabled) .compRadio {
+.compRowSelected .compRowMainBtn:not(:disabled) .compCheckbox {
   border-color: var(--accent);
+  background: var(--accent);
 }
 
-.compRadioInner {
+.compRow:hover:not(:has(.compRowMainBtn:disabled)) .compCheckbox {
+  border-color: var(--text-muted);
+}
+
+.compCheckboxCheck {
   position: absolute;
   top: 50%;
   left: 50%;
-  transform: translate(-50%, -50%);
-  width: 7px;
+  transform: translate(-50%, -50%) rotate(45deg);
+  width: 4px;
   height: 7px;
-  border-radius: 50%;
-  background: var(--accent);
+  border-right: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  margin-top: -1px;
 }
 
 /* Empty state when no models match. */

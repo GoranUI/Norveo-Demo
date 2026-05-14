@@ -240,6 +240,88 @@
   color: var(--success);
 }
 
+/* ── Nav sub-items (step rows under each group) ── */
+.navGroup {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.navGroup:last-child {
+  border-bottom: none;
+}
+
+/* Remove bottom border from the group button itself so the sub-items sit flush */
+.navGroup .navItem {
+  border-bottom: none;
+}
+
+.navSubItems {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 0 var(--sp-4) var(--sp-3) calc(var(--sp-6) + 3px);
+}
+
+.navSubItem {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-2) var(--sp-3);
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
+  transition: background 0.12s;
+}
+
+.navSubItem:hover {
+  background: var(--bg-hover);
+}
+
+.navSubItemCurrent {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
+.navSubItemCurrent:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+.navSubDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: color-mix(in srgb, var(--text-muted) 60%, transparent);
+  transition: background 0.2s, box-shadow 0.2s;
+}
+
+.navSubDotDone {
+  background: var(--success);
+  box-shadow: 0 0 4px color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+.navSubLabel {
+  font-size: var(--fs-xs);
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+  flex: 1;
+}
+
+.navSubItemDone .navSubLabel {
+  color: var(--text-primary);
+}
+
+.navSubItemCurrent .navSubLabel {
+  color: var(--accent);
+  font-weight: 500;
+}
+
 /* ── Step dots (shared) ── */
 .stepDots {
   display: flex;

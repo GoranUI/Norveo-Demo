@@ -11,6 +11,7 @@ import {
   projectFieldsFromHit,
   type GeocodeHit,
 } from '../../utils/geocoding';
+import { InfoHint } from '../ui/InfoHint';
 import styles from './forms.module.css';
 import geoStyles from './ProjectLocationForm.module.css';
 
@@ -237,11 +238,13 @@ export function ProjectLocationForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Project Location</h2>
-      <p className={styles.formDesc}>
-        Start from the map once you have a lookup result, or type the legal site address first and run{' '}
-        <strong>Look up address</strong>.
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Project Location</h2>
+        <InfoHint
+          contextLabel="Project Location"
+          text="Start from the map once you have a lookup result, or type the legal site address first and run Look up address."
+        />
+      </div>
       <TextInput
         label="Project Name"
         value={d.projectName}

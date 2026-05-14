@@ -69,11 +69,11 @@ interface FiltrationCatalogueBlockProps {
   baseCatalogueRows: FilterProduct[];
   disabled: boolean;
   filterCount: number;
-  selectedFilterModelId: string | null;
+  selectedFilterModelIds: string[];
   recirculationGpm: number;
   designRate: number;
   filterAreaRequiredSf: number;
-  onSelect: (f: FilterProduct) => void;
+  onToggle: (f: FilterProduct) => void;
 }
 
 /** Toolbar + table; remounted when `mediaType` / brand preference change so filter UI resets without an effect. */
@@ -81,11 +81,11 @@ function FiltrationCatalogueBlock({
   baseCatalogueRows,
   disabled,
   filterCount,
-  selectedFilterModelId,
+  selectedFilterModelIds,
   recirculationGpm,
   designRate,
   filterAreaRequiredSf,
-  onSelect,
+  onToggle,
 }: FiltrationCatalogueBlockProps) {
   const { state, dispatch } = useApp();
   const qtyById = state.data.filterCatalogQtyByModelId ?? {};
@@ -103,7 +103,7 @@ function FiltrationCatalogueBlock({
 
   const [priceFloor, setPriceFloor] = useState<number | ''>('');
   const [priceCeil, setPriceCeil] = useState<number | ''>('');
-  const [brandPick, setBrandPick] = useState<string>('');
+  const [brandFilter, setBrandFilter] = useState<string[]>([]);
   const [minTanks, setMinTanks] = useState(1);
   const [meetsFilter, setMeetsFilter] = useState<'all' | 'yes' | 'no'>('all');
   const [sortKey, setSortKey] = useState<'area' | 'price' | 'brand'>('area');
@@ -112,7 +112,7 @@ function FiltrationCatalogueBlock({
     let rows = [...baseCatalogueRows];
     if (priceFloor !== '') rows = rows.filter((r) => r.price >= priceFloor);
     if (priceCeil !== '') rows = rows.filter((r) => r.price <= priceCeil);
-    if (brandPick) rows = rows.filter((r) => r.brand === brandPick);
+    if (brandFilter.length) rows = rows.filter((r) => brandFilter.includes(r.brand));
     if (minTanks > 1) {
       rows = rows.filter((f) => {
         const need =
@@ -139,7 +139,7 @@ function FiltrationCatalogueBlock({
     baseCatalogueRows,
     priceFloor,
     priceCeil,
-    brandPick,
+    brandFilter,
     minTanks,
     filterAreaRequiredSf,
     meetsFilter,
@@ -153,7 +153,7 @@ function FiltrationCatalogueBlock({
   const filtersDirty =
     priceFloor !== '' ||
     priceCeil !== '' ||
-    brandPick !== '' ||
+    brandFilter.length > 0 ||
     minTanks > 1 ||
     meetsFilter !== 'all' ||
     sortKey !== 'area';
@@ -161,7 +161,7 @@ function FiltrationCatalogueBlock({
   const clearToolbarFilters = () => {
     setPriceFloor('');
     setPriceCeil('');
-    setBrandPick('');
+    setBrandFilter([]);
     setMinTanks(1);
     setMeetsFilter('all');
     setSortKey('area');
@@ -249,21 +249,30 @@ function FiltrationCatalogueBlock({
         </div>
         {brandsInCatalogue.length > 1 && (
           <div className={styles.catField}>
-            <span className={styles.catFieldLabel}>Brand</span>
-            <select
-              className={styles.catSelect}
-              value={brandPick}
-              onChange={(e) => setBrandPick(e.target.value)}
-              disabled={disabled}
-              aria-label="Filter by brand"
-            >
-              <option value="">All brands</option>
-              {brandsInCatalogue.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
+            <span className={styles.catFieldLabel}>Brands</span>
+            <p className={styles.catFieldHint}>
+              Select one or more, or leave all unchecked to show every brand.
+            </p>
+            <div className={styles.brandChips} role="group" aria-label="Filter by brand">
+              {brandsInCatalogue.map((b) => {
+                const on = brandFilter.includes(b);
+                return (
+                  <label key={b} className={styles.catBrandToggle}>
+                    <input
+                      type="checkbox"
+                      checked={on}
+                      disabled={disabled}
+                      onChange={() => {
+                        setBrandFilter((prev) =>
+                          on ? prev.filter((x) => x !== b) : [...prev, b],
+                        );
+                      }}
+                    />
+                    <span>{b}</span>
+                  </label>
+                );
+              })}
+            </div>
           </div>
         )}
         <div className={styles.toolbarMeta}>
@@ -295,7 +304,7 @@ function FiltrationCatalogueBlock({
             <div role="columnheader" className={styles.compHeadRight}>Rate gpm/ft²</div>
           </div>
           {displayedCatalogueRows.map((f) => {
-            const isSelected = selectedFilterModelId === f.id;
+            const isSelected = selectedFilterModelIds.includes(f.id);
             const rowQty = qtyById[f.id] ?? filterCount;
             const totalArea = f.filterAreaSqFt * Math.max(1, rowQty);
             const rate = totalArea > 0 ? recirculationGpm / totalArea : 0;
@@ -309,14 +318,14 @@ function FiltrationCatalogueBlock({
                 <button
                   type="button"
                   className={styles.compRowMainBtn}
-                  onClick={() => onSelect(f)}
+                  onClick={() => onToggle(f)}
                   disabled={disabled}
                   aria-pressed={isSelected}
-                  aria-label={`Select ${f.brand} ${f.model}`}
+                  aria-label={`${isSelected ? 'Deselect' : 'Select'} ${f.brand} ${f.model}`}
                 >
                   <div className={styles.compSelectCell} role="cell">
-                    <span className={styles.compRadio} aria-hidden="true">
-                      {isSelected && <span className={styles.compRadioInner} />}
+                    <span className={styles.compCheckbox} aria-hidden="true">
+                      {isSelected && <span className={styles.compCheckboxCheck} />}
                     </span>
                   </div>
                   <div className={styles.compCell} role="cell">
@@ -329,16 +338,13 @@ function FiltrationCatalogueBlock({
                   role="cell"
                   onClick={(e) => e.stopPropagation()}
                 >
-                  <input
-                    type="number"
-                    min={1}
-                    max={12}
-                    className={styles.compQtyInput}
+                  <select
+                    className={styles.compQtySelect}
                     value={rowQty}
                     disabled={disabled}
                     aria-label={`Quantity for ${f.model}`}
                     onChange={(e) => {
-                      const n = Math.max(1, Math.min(12, parseInt(e.target.value, 10) || 1));
+                      const n = Number(e.target.value);
                       dispatch({
                         type: 'UPDATE_DATA',
                         payload: {
@@ -347,7 +353,11 @@ function FiltrationCatalogueBlock({
                         },
                       });
                     }}
-                  />
+                  >
+                    {Array.from({ length: 12 }, (_, i) => i + 1).map((n) => (
+                      <option key={n} value={n}>{n}</option>
+                    ))}
+                  </select>
                 </div>
                 <div
                   className={`${styles.compCell} ${styles.compCellRight} ${styles.compMetricPer}`}
@@ -431,9 +441,11 @@ export function FiltrationForm() {
     return rows;
   }, [mediaType]);
 
-  const selectedFilter = useMemo(
-    () => FILTER_CATALOG.find((f) => f.id === d.selectedFilterModelId) ?? null,
-    [d.selectedFilterModelId],
+  const selectedFilterIds = d.selectedFilterModelIds ?? [];
+  const selectedFilters = useMemo(
+    () => selectedFilterIds.map((id) => FILTER_CATALOG.find((f) => f.id === id)).filter(Boolean) as FilterProduct[],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [selectedFilterIds.join(',')],
   );
 
   const designRateDefault = defaultDesignRate(mediaType, d.poolUseType);
@@ -442,14 +454,27 @@ export function FiltrationForm() {
   const backwashRateDefault = defaultBackwashRate(mediaType);
   const backwashRate = d.filterBackwashRateGpmPerSf ?? backwashRateDefault;
 
+  // Total actual filter area = sum of (each selected model's area × its qty).
+  const totalSelectedAreaSf = useMemo(() => {
+    const qtyById = d.filterCatalogQtyByModelId ?? {};
+    return selectedFilters.reduce((sum, f) => {
+      const qty = qtyById[f.id] ?? d.filterCount;
+      return sum + f.filterAreaSqFt * Math.max(1, qty);
+    }, 0);
+  }, [selectedFilters, d.filterCatalogQtyByModelId, d.filterCount]);
+
+  // Use first selected filter for per-model backwash display.
+  const primaryFilter = selectedFilters[0] ?? null;
+
   const sizingInputs: FilterSizingInputs = useMemo(
     () => ({
       recirculationGpm,
       flowRateDesignGpmPerSf: d.filterDesignRateGpmPerSf,
       mediaType,
       poolUseType: d.poolUseType,
-      perFilterAreaSf: selectedFilter?.filterAreaSqFt ?? 0,
-      filterCount: d.filterCount,
+      // Pass total area as a single "virtual" filter so sizing calcs use the real combined footprint.
+      perFilterAreaSf: totalSelectedAreaSf,
+      filterCount: 1,
       backwashRateGpmPerSf: d.filterBackwashRateGpmPerSf,
       sewerCapacityGpm: d.filterSewerCapacityGpm,
       retentionTimeMin: d.filterRetentionTimeMin,
@@ -462,8 +487,7 @@ export function FiltrationForm() {
       d.filterDesignRateGpmPerSf,
       mediaType,
       d.poolUseType,
-      selectedFilter,
-      d.filterCount,
+      totalSelectedAreaSf,
       d.filterBackwashRateGpmPerSf,
       d.filterSewerCapacityGpm,
       d.filterRetentionTimeMin,
@@ -475,25 +499,34 @@ export function FiltrationForm() {
 
   const sizing = useMemo(() => calculateFilterSizing(sizingInputs), [sizingInputs]);
 
-  const isComplete = !!d.filtrationType && !!d.selectedFilterModelId && d.filterCount > 0;
+  const isComplete = !!d.filtrationType && selectedFilterIds.length > 0;
 
-  const handleSelectFilter = (f: FilterProduct) => {
-    const recommended =
-      sizing.filterAreaRequiredSf > 0
-        ? Math.max(1, Math.ceil(sizing.filterAreaRequiredSf / f.filterAreaSqFt))
-        : Math.max(1, d.filterCount);
+  const handleToggleFilter = (f: FilterProduct) => {
     const prev = d.filterCatalogQtyByModelId ?? {};
-    update({
-      selectedFilterModelId: f.id,
-      filterCount: recommended,
-      filterCatalogQtyByModelId: { ...prev, [f.id]: recommended },
-    });
+    const alreadySelected = selectedFilterIds.includes(f.id);
+    if (alreadySelected) {
+      update({ selectedFilterModelIds: selectedFilterIds.filter((id) => id !== f.id) });
+    } else {
+      const recommended =
+        sizing.filterAreaRequiredSf > 0
+          ? Math.max(1, Math.ceil(sizing.filterAreaRequiredSf / f.filterAreaSqFt))
+          : Math.max(1, d.filterCount);
+      update({
+        selectedFilterModelIds: [...selectedFilterIds, f.id],
+        filterCount: recommended,
+        filterCatalogQtyByModelId: { ...prev, [f.id]: prev[f.id] ?? recommended },
+      });
+    }
   };
 
   return (
     <div className={formStyles.form}>
       <div className={styles.titleRow}>
         <h2 className={formStyles.formTitle}>Filtration</h2>
+        <InfoHint
+          contextLabel="Filtration"
+          text="Pick a media type, then select a filter tank model. The catalogue is filtered by media; use the table toolbar to narrow by price, brand, and design rate. The recirculation rate from the volume + turnover calc is used to size required area, and we surface backwash flow plus retention pit dimensions for your sewer capacity."
+        />
         {isComplete && (
           <span className={styles.completeBadge}>
             <CheckCircle2 size={13} aria-hidden="true" />
@@ -501,13 +534,6 @@ export function FiltrationForm() {
           </span>
         )}
       </div>
-
-      <p className={formStyles.formDesc}>
-        Pick a media type, then select a filter tank model. The catalogue is filtered by
-        media; use the table toolbar to narrow by price, brand, and design rate. The
-        recirculation rate from the volume + turnover calc is used to size required area,
-        and we surface backwash flow plus retention pit dimensions for your sewer capacity.
-      </p>
 
       {/* ── Filtration Type ── */}
       <div className={styles.sectionLabel}>Filtration Type</div>
@@ -519,7 +545,7 @@ export function FiltrationForm() {
           update({
             filtrationType: v,
             // Clear selection / overrides when media changes — defaults must reset.
-            selectedFilterModelId: null,
+            selectedFilterModelIds: [],
             filterDesignRateGpmPerSf: null,
             filterBackwashRateGpmPerSf: null,
           })
@@ -581,8 +607,10 @@ export function FiltrationForm() {
             const n = Math.max(1, Math.floor(v));
             const prev = d.filterCatalogQtyByModelId ?? {};
             const payload: Record<string, unknown> = { filterCount: n };
-            if (d.selectedFilterModelId) {
-              payload.filterCatalogQtyByModelId = { ...prev, [d.selectedFilterModelId]: n };
+            if (selectedFilterIds.length > 0) {
+              const updated = { ...prev };
+              for (const id of selectedFilterIds) updated[id] = n;
+              payload.filterCatalogQtyByModelId = updated;
             }
             update(payload);
           }}
@@ -609,25 +637,31 @@ export function FiltrationForm() {
           baseCatalogueRows={baseCatalogueRows}
           disabled={disabled}
           filterCount={d.filterCount}
-          selectedFilterModelId={d.selectedFilterModelId}
+          selectedFilterModelIds={selectedFilterIds}
           recirculationGpm={recirculationGpm}
           designRate={designRate}
           filterAreaRequiredSf={sizing.filterAreaRequiredSf}
-          onSelect={handleSelectFilter}
+          onToggle={handleToggleFilter}
         />
       )}
 
       {/* ── Capacity Actuals ── */}
-      {selectedFilter && (
+      {selectedFilters.length > 0 && (
         <>
           <div className={styles.sectionLabel}>Filter Capacity — Actual</div>
           <div className={styles.summaryStrip}>
             <div className={styles.summaryCard}>
-              <div className={styles.summaryLabel}>Selected model</div>
-              <div className={styles.summaryValue}>{selectedFilter.model}</div>
+              <div className={styles.summaryLabel}>
+                {selectedFilters.length === 1 ? 'Selected model' : 'Models selected'}
+              </div>
+              <div className={styles.summaryValue}>
+                {selectedFilters.length === 1
+                  ? selectedFilters[0].model
+                  : `${selectedFilters.length} models`}
+              </div>
             </div>
             <div className={`${styles.summaryCard} ${styles.summaryCardAccent}`}>
-              <div className={styles.summaryLabel}>Actual area total</div>
+              <div className={styles.summaryLabel}>Combined area</div>
               <div className={styles.summaryValue}>{fmtNum(sizing.filterAreaActualSf, 2)} ft²</div>
             </div>
             <div
@@ -745,10 +779,12 @@ export function FiltrationForm() {
             {fmtNum(sizing.backwashFlowPerFilterGpm, 0)} gpm
           </div>
         </div>
-        {selectedFilter && selectedFilter.backwashGpm > 0 && (
+        {primaryFilter && primaryFilter.backwashGpm > 0 && (
           <div className={styles.summaryCard}>
-            <div className={styles.summaryLabel}>Catalog backwash (model)</div>
-            <div className={styles.summaryValue}>{fmtNum(selectedFilter.backwashGpm, 0)} gpm</div>
+            <div className={styles.summaryLabel}>
+              Catalog backwash{selectedFilters.length > 1 ? ' (primary)' : ''}
+            </div>
+            <div className={styles.summaryValue}>{fmtNum(primaryFilter.backwashGpm, 0)} gpm</div>
           </div>
         )}
         <NumField

@@ -3,6 +3,7 @@ import { CheckCircle2 } from 'lucide-react';
 import { useApp } from '../../store';
 import { MultiSelect } from '../ui/MultiSelect';
 import { OptionButton } from '../ui/OptionButton';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import { secondarySanitationRequiredByCodes } from '../../utils/codeFeatures';
 import styles from './forms.module.css';
@@ -29,8 +30,12 @@ export function SecondarySanitationForm() {
 
   return (
     <div className={styles.form}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12 }}>
+      <div className={styles.formTitleRow}>
         <h2 className={styles.formTitle}>Secondary Sanitation</h2>
+        <InfoHint
+          contextLabel="Secondary Sanitation"
+          text="Optional polishing systems that supplement the primary chemical sanitizer. Use Auto to follow the demo rule for MAHC / Texas public pools — the UI turns this section on when those codes apply."
+        />
         {isComplete && (
           <span
             style={{
@@ -50,11 +55,6 @@ export function SecondarySanitationForm() {
           </span>
         )}
       </div>
-      <p className={styles.formDesc}>
-        Optional polishing systems that supplement the primary chemical sanitizer. Use{' '}
-        <strong>Auto</strong> to follow the demo rule for MAHC / Texas public pools — the UI turns
-        this section on when those codes apply.
-      </p>
 
       <OptionButton
         label="Secondary sanitation"

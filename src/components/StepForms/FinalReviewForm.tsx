@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { STEP_DEFINITIONS } from '../../types';
+import { InfoHint } from '../ui/InfoHint';
 import styles from './forms.module.css';
 
 export function FinalReviewForm() {
@@ -9,10 +10,13 @@ export function FinalReviewForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Final Review</h2>
-      <p className={styles.formDesc}>
-        Review all configuration choices before finalizing. Click any item to edit.
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Final Review</h2>
+        <InfoHint
+          contextLabel="Final Review"
+          text="Review all configuration choices before finalizing. Click any item to edit."
+        />
+      </div>
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <tbody>
           {visibleSteps.map((step) => {

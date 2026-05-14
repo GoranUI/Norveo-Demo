@@ -3,6 +3,7 @@ import { Plus, X } from 'lucide-react';
 import { useApp } from '../../store';
 import { OptionButton } from '../ui/OptionButton';
 import { MultiSelect } from '../ui/MultiSelect';
+import { InfoHint } from '../ui/InfoHint';
 import { CODE_STANDARDS } from '../../data/codeStandards';
 import { suggestedCodesForState } from '../../data/codeJurisdiction';
 import formStyles from './forms.module.css';
@@ -23,11 +24,13 @@ export function LocalCodeAwarenessForm() {
 
   return (
     <div className={formStyles.form}>
-      <h2 className={formStyles.formTitle}>Local Code Awareness</h2>
-      <p className={formStyles.formDesc}>
-        Are you familiar with the local building codes that apply to this project?
-        Future enhancement: codes will autopopulate from project location.
-      </p>
+      <div className={formStyles.formTitleRow}>
+        <h2 className={formStyles.formTitle}>Local Code Awareness</h2>
+        <InfoHint
+          contextLabel="Local Code Awareness"
+          text="Are you familiar with the local building codes that apply to this project? Codes will autopopulate from project location in a future release."
+        />
+      </div>
 
       <OptionButton
         label="Awareness"
@@ -88,22 +91,26 @@ export function LocalCodeDetailsForm() {
   if (d.localCodeAwareness !== 'yes') {
     return (
       <div className={formStyles.form}>
+        <div className={formStyles.formTitleRow}>
         <h2 className={formStyles.formTitle}>Code Standards</h2>
-        <p className={formStyles.formDesc}>
-          Set <strong>Code Awareness</strong> to &quot;Yes, I know the codes&quot; before selecting
-          standards here.
-        </p>
+        <InfoHint
+          contextLabel="Code Standards"
+          text='Set Code Awareness to "Yes, I know the codes" before selecting standards here.'
+        />
+      </div>
       </div>
     );
   }
 
   return (
     <div className={formStyles.form}>
-      <h2 className={formStyles.formTitle}>Code Standards</h2>
-      <p className={formStyles.formDesc}>
-        Select every model code or state rule that governs this pool. Use the suggestion panel as a
-        starting point only.
-      </p>
+      <div className={formStyles.formTitleRow}>
+        <h2 className={formStyles.formTitle}>Code Standards</h2>
+        <InfoHint
+          contextLabel="Code Standards"
+          text="Select every model code or state rule that governs this pool. Use the suggestion panel as a starting point only — confirm with the local AHJ. One option can mark Deck and Diving Board as not applicable unless you use the wizard override on those steps."
+        />
+      </div>
 
       <div className={styles.suggestedPanel}>
         <div className={styles.suggestedHeader}>

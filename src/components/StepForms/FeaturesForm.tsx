@@ -1,5 +1,6 @@
 import { useApp } from '../../store';
 import { MultiSelect } from '../ui/MultiSelect';
+import { InfoHint } from '../ui/InfoHint';
 import { getOptionCost } from '../../data/configCosts';
 import styles from './forms.module.css';
 
@@ -20,11 +21,13 @@ export function FeaturesForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Pool Features</h2>
-      <p className={styles.formDesc}>
-        Optional extras — covers, slides, accessibility lifts, and other on-deck
-        features. Pick any that apply.
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Pool Features</h2>
+        <InfoHint
+          contextLabel="Pool Features"
+          text="Optional extras — covers, slides, accessibility lifts, and other on-deck features. Pick any that apply."
+        />
+      </div>
       <MultiSelect
         label="Features"
         options={OPTIONS}

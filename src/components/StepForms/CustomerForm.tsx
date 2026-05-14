@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../../store';
 import { TextInput } from '../ui/TextInput';
+import { InfoHint } from '../ui/InfoHint';
 import styles from './forms.module.css';
 
 function formatSiteAddress(d: {
@@ -47,10 +48,13 @@ export function CustomerForm() {
 
   return (
     <div className={styles.form}>
-      <h2 className={styles.formTitle}>Customer &amp; owner</h2>
-      <p className={styles.formDesc}>
-        Customer is who we contract and invoice. Owner is the legal entity shown on permit packages — often the same, but not always.
-      </p>
+      <div className={styles.formTitleRow}>
+        <h2 className={styles.formTitle}>Customer &amp; owner</h2>
+        <InfoHint
+          contextLabel="Customer and owner"
+          text="Customer is who we contract and invoice. Owner is the legal entity shown on permit packages — often the same, but not always."
+        />
+      </div>
 
       <h3 className={styles.blockTitle}>Customer (billing / contact)</h3>
       <TextInput
@@ -89,14 +93,13 @@ export function CustomerForm() {
         disabled={disabled}
       />
 
-      <h3 className={styles.blockTitle}>Owner (permits / legal)</h3>
-      {d.localCodeAwareness === 'yes' && d.codeStandards.length > 0 && (
-        <p className={styles.formDesc} style={{ marginTop: 0, marginBottom: 'var(--sp-3)' }}>
-          <strong>Permit packages:</strong> AHJs expect the owner block to match the property deed or
-          HOA agreement. Double-check spelling before filing — especially when ISPSC, MAHC, or state
-          pool codes are selected.
-        </p>
-      )}
+      <div className={styles.blockTitleRow}>
+        <h3 className={styles.blockTitle}>Owner (permits / legal)</h3>
+        <InfoHint
+          contextLabel="Owner (permits / legal)"
+          text="AHJs expect the owner block to match the property deed or HOA agreement. Double-check spelling before filing — especially when ISPSC, MAHC, or state pool codes are selected."
+        />
+      </div>
       <label className={styles.sameAsCard}>
         <input
           type="checkbox"
